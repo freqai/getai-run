@@ -17,6 +17,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            bash <<'SCRIPT'
             set -e
 
             REPO_DIR="/root/getai-run"
@@ -41,3 +42,4 @@ jobs:
 
             echo ">>> Deployment complete"
             docker compose ps
+            SCRIPT
