@@ -1,0 +1,43 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            REPO_DIR="/root/getai-run"
+            REPO_URL="https://github.com/freqai/getai-run.git"
+
+            if [ ! -d "$REPO_DIR" ]; then
+              echo ">>> Cloning repository..."
+              git clone "$REPO_URL" "$REPO_DIR"
+            else
+              echo ">>> Pulling latest changes..."
+              cd "$REPO_DIR"
+              git pull origin main
+            fi
+
+            cd "$REPO_DIR"
+
+            echo ">>> Building and starting containers..."
+            docker compose up -d --build
+
+            echo ">>> Pruning old images..."
+            docker image prune -f
+
+            echo ">>> Deployment complete"
+            docker compose ps
