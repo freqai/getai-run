@@ -298,10 +298,7 @@ func (s *PostgresStore) table(name string) string {
 }
 
 func (s *PostgresStore) index(name string) string {
-	if s.schema == "" {
-		return quoteIdentifier(name)
-	}
-	return quoteIdentifier(s.schema) + "." + quoteIdentifier(name)
+	return quoteIdentifier(name)
 }
 
 func quoteIdentifier(identifier string) string {
