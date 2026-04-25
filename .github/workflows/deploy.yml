@@ -17,22 +17,19 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            bash <<'SCRIPT'
-            set -e
+            set REPO_DIR /root/getai-run
+            set REPO_URL https://github.com/freqai/getai-run.git
 
-            REPO_DIR="/root/getai-run"
-            REPO_URL="https://github.com/freqai/getai-run.git"
-
-            if [ ! -d "$REPO_DIR" ]; then
+            if not test -d $REPO_DIR
               echo ">>> Cloning repository..."
-              git clone "$REPO_URL" "$REPO_DIR"
+              git clone $REPO_URL $REPO_DIR
             else
               echo ">>> Pulling latest changes..."
-              cd "$REPO_DIR"
+              cd $REPO_DIR
               git pull origin main
-            fi
+            end
 
-            cd "$REPO_DIR"
+            cd $REPO_DIR
 
             echo ">>> Building and starting containers..."
             docker compose up -d --build
@@ -42,4 +39,3 @@ jobs:
 
             echo ">>> Deployment complete"
             docker compose ps
-            SCRIPT
