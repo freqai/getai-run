@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG_PATH="${TMPDIR:-/tmp}/getai-run-8417.yaml"
+BACKEND_LOG="${TMPDIR:-/tmp}/getai-run-8417.log"
+FRONTEND_LOG="${TMPDIR:-/tmp}/getai-run-4173.log"
+
+cd "$ROOT"
+
+cp config.example.yaml "$CONFIG_PATH"
+perl -0pi -e 's/port: 8317/port: 8417/' "$CONFIG_PATH"
+
+if lsof -ti tcp:8417 >/dev/null 2>&1; then
+  lsof -ti tcp:8417 | xargs kill
+fi
+
+if ! lsof -ti tcp:4173 >/dev/null 2>&1; then
+  nohup python3 -m http.server 4173 --directory website >"$FRONTEND_LOG" 2>&1 &
+fi
+
+nohup go run ./cmd/server --config "$CONFIG_PATH" --no-browser >"$BACKEND_LOG" 2>&1 &
+
+echo "Frontend: http://127.0.0.1:4173/"
+echo "Backend:  http://127.0.0.1:8417/"
+echo "Logs:"
+echo "  $FRONTEND_LOG"
+echo "  $BACKEND_LOG"

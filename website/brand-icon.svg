@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="getai.run horse logo">
+  <defs>
+    <linearGradient id="bg" x1="12" y1="10" x2="84" y2="86" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#541924"/>
+      <stop offset="1" stop-color="#16070d"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="80" height="80" rx="22" fill="url(#bg)"/>
+  <rect x="8" y="8" width="80" height="80" rx="22" fill="none" stroke="#fff" stroke-width="5"/>
+  <path
+    d="M26 77c-6-26 5-51 28-54l10-16 5 18 13-10c0 13-5 22-12 29 5 15-1 30-13 35-11 4-22-3-24-15"
+    fill="none"
+    stroke="#fff"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="63" cy="44" r="3.5" fill="#fff"/>
+</svg>
