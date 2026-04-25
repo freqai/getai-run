@@ -31,6 +31,15 @@ jobs:
 
             cd $REPO_DIR
 
+            echo ">>> Preparing runtime files..."
+            if test -d config.yaml
+              rm -rf config.yaml
+            end
+            if not test -f config.yaml
+              cp config.example.yaml config.yaml
+            end
+            mkdir -p logs auths
+
             echo ">>> Building and starting containers..."
             docker compose up -d --build
 
