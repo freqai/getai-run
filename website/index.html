@@ -15,150 +15,238 @@
       <header class="site-header">
         <a class="brand" href="/" aria-label="getai.run 首页">
           <span class="brand-mark" aria-hidden="true">G</span>
-          <div class="brand-text">
-            <strong>getai.run</strong>
-            <span>AI 中转站</span>
-          </div>
+          <strong>getai.run</strong>
         </a>
         <nav class="site-nav" aria-label="主导航">
-          <a href="#features">核心能力</a>
+          <a href="#quickstart">快速集成</a>
+          <a href="#features">核心优势</a>
           <a href="/价格/">价格</a>
           <a href="/docs/">文档</a>
-          <a href="#access">接入方式</a>
+          <a href="#faq">FAQ</a>
         </nav>
       </header>
 
       <main>
-        <section class="hero">
-          <div class="hero-copy">
-            <p class="eyebrow">稳定 · 统一 · 面向生产</p>
-            <h1>一个入口，连接主流 AI 模型与客户端</h1>
+        <section class="hero" id="quickstart">
+          <div class="hero-head">
+            <p class="eyebrow">OpenAI · Claude · Gemini · Codex</p>
+            <h1>3 分钟快速接入 AI 中转站</h1>
             <p class="hero-text">
-              getai.run 提供统一的 AI 接入层，面向 OpenAI、Claude、Gemini、Codex 等生态，
-              适合开发者、团队和自动化系统以一致方式接入模型能力。
-            </p>
-            <div class="hero-actions">
-              <a class="button button-primary" href="https://api.getai.run/v1/models">查看接口</a>
-              <a class="button button-secondary" href="/docs/">使用文档</a>
-            </div>
-            <div class="hero-notes">
-              <span>官网：getai.run</span>
-              <span>接口：api.getai.run</span>
-            </div>
-          </div>
-
-          <div class="hero-panel" aria-label="接口示意">
-            <div class="panel-top">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <div class="panel-body">
-              <div class="terminal-line">
-                <span class="prompt">$</span>
-                <span>curl https://api.getai.run/v1/chat/completions</span>
-              </div>
-              <div class="flow-grid">
-                <div class="flow-column">
-                  <b>客户端</b>
-                  <span>OpenAI SDK</span>
-                  <span>Claude Code</span>
-                  <span>Codex CLI</span>
-                  <span>Gemini CLI</span>
-                </div>
-                <div class="flow-core">
-                  <small>统一接入层</small>
-                  <strong>getai.run</strong>
-                  <em>路由 / 认证 / 转发</em>
-                </div>
-                <div class="flow-column">
-                  <b>模型侧</b>
-                  <span>OpenAI</span>
-                  <span>Claude</span>
-                  <span>Gemini</span>
-                  <span>自定义上游</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="section" id="features">
-          <div class="section-head">
-            <p class="eyebrow">核心能力</p>
-            <h2>围绕真实调用链路设计，而不是演示页面</h2>
-          </div>
-          <div class="card-grid">
-            <article class="info-card">
-              <h3>统一协议入口</h3>
-              <p>兼容主流 AI 客户端调用方式，减少多平台接入和切换成本。</p>
-            </article>
-            <article class="info-card">
-              <h3>稳定中转能力</h3>
-              <p>适合放在团队或业务侧前面，作为统一的模型访问出口。</p>
-            </article>
-            <article class="info-card">
-              <h3>多模型兼容</h3>
-              <p>面向 OpenAI、Claude、Gemini、Codex 等常见模型生态。</p>
-            </article>
-            <article class="info-card">
-              <h3>便于扩展</h3>
-              <p>可根据业务需求继续扩展鉴权、限流、路由与监控能力。</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="section split" id="scenes">
-          <div>
-            <p class="eyebrow">适用场景</p>
-            <h2>适合个人开发者，也适合团队统一接入</h2>
-            <p class="section-text">
-              无论你是在做编码助手接入、自动化脚本调用，还是团队内部模型访问统一出口，
-              都可以通过 getai.run 获得更稳定、更统一的调用体验。
+              一个 API 入口连接主流模型和常见 AI 客户端。注册、换地址、开始调用，现有 OpenAI SDK 只需要改一行配置。
             </p>
           </div>
-          <div class="tag-grid" aria-label="适用场景列表">
-            <span>代码助手接入</span>
-            <span>统一 API 出口</span>
-            <span>内部工具调用</span>
-            <span>自动化工作流</span>
-            <span>多模型切换</span>
-            <span>业务系统集成</span>
+
+          <div class="quickstart-layout">
+            <ol class="steps" aria-label="快速接入步骤">
+              <li>
+                <span class="step-index">1</span>
+                <div>
+                  <h2>注册，创建密钥</h2>
+                  <p>注册账户后在控制台生成专属 API Key，无需信用卡即可开始配置。</p>
+                  <div class="step-actions">
+                    <a class="button button-primary" href="/docs/">获取 API 密钥</a>
+                    <a class="button button-secondary" href="/docs/">查看文档</a>
+                  </div>
+                </div>
+              </li>
+              <li>
+                <span class="step-index">2</span>
+                <div>
+                  <h2>修改配置</h2>
+                  <p>将 API 端点改为 getai.run 地址，OpenAI SDK、Claude Code、Codex CLI 等客户端都能快速接入。</p>
+                  <div class="step-actions">
+                    <a class="button button-primary" href="/docs/">查看文档</a>
+                    <a class="button button-secondary" href="https://api.getai.run/v1/models">在线测试</a>
+                  </div>
+                </div>
+              </li>
+              <li>
+                <span class="step-index">3</span>
+                <div>
+                  <h2>开始调用模型</h2>
+                  <p>通过统一接口访问 GPT、Claude、Gemini、Codex 等模型，把路由、认证和转发交给中转站。</p>
+                </div>
+              </li>
+            </ol>
+
+            <div class="code-window" aria-label="API 请求示例">
+              <div class="window-bar">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+                <span class="window-title">getai.run — demo.request</span>
+              </div>
+              <div class="code-tabs" aria-label="示例语言">
+                <span class="active">cURL</span>
+                <span>Python</span>
+                <span>JavaScript</span>
+                <span>Go</span>
+                <span>Java</span>
+              </div>
+              <pre><code>curl --request POST \
+  --url https://api.getai.run/v1/chat/completions \
+  --header 'Authorization: Bearer &lt;token&gt;' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "gpt-4o",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful AI assistant."
+      },
+      {
+        "role": "user",
+        "content": "Tell me about getai.run."
+      }
+    ]
+  }'</code></pre>
+            </div>
           </div>
         </section>
 
-        <section class="section access-section" id="access">
-          <div class="section-head compact">
-            <p class="eyebrow">接入方式</p>
-            <h2>官网与接口分离，结构更清晰</h2>
+        <section class="section features-section" id="features">
+          <div class="section-head centered">
+            <p class="eyebrow">Why getai.run</p>
+            <h2>为什么选择 getai.run</h2>
+            <p>统一平台、透明计价、稳定链路，让你专注于产品本身。</p>
           </div>
-          <div class="access-layout">
-            <div class="access-card primary">
-              <small>官网地址</small>
-              <strong>https://getai.run</strong>
-              <p>用于产品介绍、文档入口、品牌展示与后续官网内容承载。</p>
-            </div>
-            <div class="access-card">
-              <small>接口地址</small>
-              <strong>https://api.getai.run</strong>
-              <p>用于模型调用、客户端配置、程序接入和自动化请求。</p>
-            </div>
-            <div class="access-card">
-              <small>示例端点</small>
-              <strong>/v1/models</strong>
-              <p>可用于确认服务在线状态以及查看当前可用模型列表。</p>
-            </div>
+
+          <div class="feature-grid">
+            <article class="feature-item">
+              <span class="feature-icon" aria-hidden="true">✓</span>
+              <div>
+                <h3>官方直连</h3>
+                <p>聚合官方与认证渠道，链路清晰，告别层层转手。</p>
+              </div>
+            </article>
+            <article class="feature-item">
+              <span class="feature-icon" aria-hidden="true">◇</span>
+              <div>
+                <h3>透明计价</h3>
+                <p>按 token / 按次计费一目了然，方便做成本预测。</p>
+              </div>
+            </article>
+            <article class="feature-item">
+              <span class="feature-icon" aria-hidden="true">▦</span>
+              <div>
+                <h3>统一控制台</h3>
+                <p>密钥、配额、用量在多模型间统一查看与管理。</p>
+              </div>
+            </article>
+            <article class="feature-item">
+              <span class="feature-icon" aria-hidden="true">↯</span>
+              <div>
+                <h3>快速接入</h3>
+                <p>兼容常见调用格式，示例代码改配置即可跑通。</p>
+              </div>
+            </article>
+            <article class="feature-item">
+              <span class="feature-icon" aria-hidden="true">∞</span>
+              <div>
+                <h3>组合折扣</h3>
+                <p>多模型组合与用量阶梯，让规模使用更划算。</p>
+              </div>
+            </article>
+            <article class="feature-item">
+              <span class="feature-icon" aria-hidden="true">◎</span>
+              <div>
+                <h3>真人支持</h3>
+                <p>集成与账单问题有工程师跟进，不靠纯机器人。</p>
+              </div>
+            </article>
           </div>
         </section>
 
-        <section class="cta-section">
-          <p class="eyebrow">立即开始</p>
-          <h2>现在就通过 api.getai.run 接入你的 AI 客户端</h2>
-          <p>
-            如果你已经完成客户端配置，可以直接开始请求；如果还在搭建阶段，官网将继续补充中文文档与接入说明。
-          </p>
-          <div class="hero-actions center">
-            <a class="button button-primary" href="https://api.getai.run/v1/models">立即测试接口</a>
+        <section class="section showcase-section" aria-labelledby="showcase-title">
+          <div class="showcase-head">
+            <h2 id="showcase-title"><span aria-hidden="true">›</span> 常用接入场景</h2>
+            <a href="/docs/">查看文档 →</a>
+          </div>
+          <div class="showcase-grid">
+            <article class="showcase-card">
+              <div class="card-top">
+                <span>SDK</span>
+                <a href="/docs/">Open →</a>
+              </div>
+              <h3>现有 OpenAI 应用平滑迁移</h3>
+              <p>保留请求结构，只替换 base_url 与 API Key，即可把 Chat Completions、Embeddings 等调用统一到中转站。</p>
+              <div class="tags">
+                <span>openai-sdk</span>
+                <span>migration</span>
+                <span>api</span>
+              </div>
+            </article>
+            <article class="showcase-card">
+              <div class="card-top">
+                <span>CLI</span>
+                <a href="/docs/">Open →</a>
+              </div>
+              <h3>AI 编程工具统一出口</h3>
+              <p>给 Claude Code、Codex CLI、Gemini CLI 等工具配置同一个入口，减少多账号、多地区、多密钥切换。</p>
+              <div class="tags">
+                <span>codex</span>
+                <span>claude</span>
+                <span>gemini</span>
+              </div>
+            </article>
+            <article class="showcase-card">
+              <div class="card-top">
+                <span>TEAM</span>
+                <a href="/价格/">Open →</a>
+              </div>
+              <h3>团队用量与成本管理</h3>
+              <p>把团队请求集中到统一账户下，按模型与 Key 查看消耗，便于预算、排查与内部结算。</p>
+              <div class="tags">
+                <span>billing</span>
+                <span>usage</span>
+                <span>team</span>
+              </div>
+            </article>
+            <article class="showcase-card">
+              <div class="card-top">
+                <span>AUTO</span>
+                <a href="/docs/">Open →</a>
+              </div>
+              <h3>自动化工作流稳定调用</h3>
+              <p>在脚本、队列、内部工具中使用统一模型出口，把上游差异留在中转层处理。</p>
+              <div class="tags">
+                <span>workflow</span>
+                <span>routing</span>
+                <span>ops</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section faq-section" id="faq">
+          <div class="section-head centered">
+            <h2>常见问题</h2>
+          </div>
+          <div class="faq-list">
+            <details>
+              <summary>什么是 getai.run，它提供什么？</summary>
+              <p>getai.run 是一个 AI API 中转站，为 OpenAI、Claude、Gemini、Codex 等常见模型和客户端提供统一接入入口。</p>
+            </details>
+            <details>
+              <summary>getai.run 上有哪些 AI 模型可用？</summary>
+              <p>可用模型会随上游与套餐变化调整，你可以通过文档或 <a href="https://api.getai.run/v1/models">/v1/models</a> 查看当前列表。</p>
+            </details>
+            <details>
+              <summary>与其他 API 提供商相比，定价如何？</summary>
+              <p>定价以透明和可预测为目标，支持按 token / 按次查看消耗，并提供适合组合使用的阶梯方案。</p>
+            </details>
+            <details>
+              <summary>如何将 getai.run API 集成到我的应用程序中？</summary>
+              <p>通常只需要把客户端的 base_url 改为 https://api.getai.run，并替换为你的 getai.run API Key。</p>
+            </details>
+            <details>
+              <summary>相比直接使用模型提供商，我为什么要选择 getai.run？</summary>
+              <p>它可以减少多平台账号、密钥、协议和账单管理成本，也更适合团队统一出口和自动化场景。</p>
+            </details>
+            <details>
+              <summary>我的 API Key 安全吗？</summary>
+              <p>API Key 用于请求认证。请像管理密码一样保管密钥，避免放入公开仓库、前端代码或日志中。</p>
+            </details>
           </div>
         </section>
       </main>
