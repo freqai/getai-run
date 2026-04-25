@@ -399,6 +399,24 @@ h3 {
   text-align: center;
 }
 
+.page-section {
+  padding-top: 80px;
+  padding-bottom: 56px;
+}
+
+.inner-title {
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 1.08;
+}
+
+.docs-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.docs-grid .info-card {
+  min-height: 180px;
+}
+
 .site-footer {
   display: flex;
   align-items: center;
@@ -439,7 +457,8 @@ h3 {
     flex-wrap: wrap;
   }
 
-  .tag-grid {
+  .tag-grid,
+  .docs-grid {
     grid-template-columns: 1fr;
   }
 
