@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="getai.run is an AI relay and gateway for OpenAI, Claude, Gemini, and Codex compatible clients."
+    >
+    <title>getai.run | AI API Relay Gateway</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="getai.run home">
+        <span class="brand-mark" aria-hidden="true">g</span>
+        <span>getai.run</span>
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#capabilities">Capabilities</a>
+        <a href="#compatibility">Compatibility</a>
+        <a href="#deploy">Deploy</a>
+        <a class="nav-cta" href="https://github.com/router-for-me/CLIProxyAPI">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-content">
+          <p class="eyebrow">AI relay gateway for modern developer tools</p>
+          <h1>One proxy endpoint for OpenAI, Claude, Gemini, and Codex compatible clients.</h1>
+          <p class="hero-copy">
+            getai.run routes AI coding and automation clients through a unified API layer with OAuth,
+            model aliases, streaming, tool calls, and round-robin account balancing.
+          </p>
+          <div class="hero-actions" aria-label="Primary actions">
+            <a class="button button-primary" href="https://github.com/router-for-me/CLIProxyAPI">View on GitHub</a>
+            <a class="button button-secondary" href="https://help.router-for.me/">Read the docs</a>
+          </div>
+          <p class="endpoint-note">
+            Main website: <strong>getai.run</strong> | API endpoint: <strong>api.getai.run</strong>
+          </p>
+        </div>
+
+        <div class="gateway-panel" aria-label="Gateway routing preview">
+          <div class="panel-bar">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="terminal-line">
+            <span class="prompt">$</span>
+            <span>curl https://api.getai.run/v1/chat/completions</span>
+          </div>
+          <div class="route-map">
+            <div class="client-stack">
+              <span>Codex CLI</span>
+              <span>Claude Code</span>
+              <span>Gemini CLI</span>
+              <span>OpenAI SDK</span>
+            </div>
+            <div class="gateway-core">
+              <span>getai.run</span>
+              <strong>routing + auth + balance</strong>
+            </div>
+            <div class="provider-stack">
+              <span>OpenAI</span>
+              <span>Claude</span>
+              <span>Gemini</span>
+              <span>Custom upstreams</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="capabilities">
+        <div class="section-heading">
+          <p class="eyebrow">Capabilities</p>
+          <h2>Built for real AI client traffic.</h2>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <h3>Unified API surface</h3>
+            <p>Serve OpenAI-style, Claude, Gemini, and Codex-compatible routes from one gateway.</p>
+          </article>
+          <article class="feature-card">
+            <h3>OAuth account routing</h3>
+            <p>Use local or multi-account OAuth credentials for supported CLI providers.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Round-robin balancing</h3>
+            <p>Distribute requests across available credentials with cooldown-aware failover.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Streaming, tools, images</h3>
+            <p>Handle streaming responses, function calling, tool use, and multimodal input.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section split-section" id="compatibility">
+        <div>
+          <p class="eyebrow">Compatibility</p>
+          <h2>Keep the clients your team already uses.</h2>
+          <p>
+            Point AI coding tools, SDKs, and automation scripts at the gateway while preserving
+            familiar request shapes and provider-specific behavior where needed.
+          </p>
+        </div>
+        <div class="compat-list" aria-label="Compatible clients and protocols">
+          <span>OpenAI SDKs</span>
+          <span>Responses API</span>
+          <span>Claude Messages</span>
+          <span>Gemini generateContent</span>
+          <span>Codex WebSocket</span>
+          <span>Amp-compatible routes</span>
+        </div>
+      </section>
+
+      <section class="section deploy-section" id="deploy">
+        <div class="deploy-copy">
+          <p class="eyebrow">Self-hosting</p>
+          <h2>Deploy the gateway where your traffic belongs.</h2>
+          <p>
+            Run it locally, on a server, or behind your own domain. Keep auth material under your
+            control, configure upstream providers, and expose the public API hostname separately from
+            the homepage.
+          </p>
+        </div>
+        <div class="deploy-card">
+          <div>
+            <span class="stat">8317</span>
+            <span>default service port</span>
+          </div>
+          <div>
+            <span class="stat">YAML</span>
+            <span>straightforward configuration</span>
+          </div>
+          <div>
+            <span class="stat">Go</span>
+            <span>single server binary</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-section">
+        <p class="eyebrow">Start routing</p>
+        <h2>Use getai.run as the public homepage and api.getai.run as the API gateway.</h2>
+        <div class="hero-actions">
+          <a class="button button-primary" href="https://github.com/router-for-me/CLIProxyAPI">Deploy from source</a>
+          <a class="button button-secondary" href="https://help.router-for.me/">Configuration guide</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>getai.run</span>
+      <span>Open-source AI relay gateway powered by CLIProxyAPI.</span>
+    </footer>
+  </body>
+</html>

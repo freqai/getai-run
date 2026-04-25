@@ -40,6 +40,12 @@ jobs:
             end
             mkdir -p logs auths
 
+            echo ">>> Updating website files..."
+            mkdir -p /var/www/getai.run
+            if test -d website
+              cp -R website/. /var/www/getai.run/
+            end
+
             echo ">>> Building and starting containers..."
             docker compose up -d --build
 
@@ -48,3 +54,5 @@ jobs:
 
             echo ">>> Deployment complete"
             docker compose ps
+            echo ">>> Website files:"
+            ls -la /var/www/getai.run
