@@ -1,161 +1,171 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta
       name="description"
-      content="getai.run is an AI relay and gateway for OpenAI, Claude, Gemini, and Codex compatible clients."
+      content="getai.run 是面向 AI 客户端的统一中转服务，兼容 OpenAI、Claude、Gemini、Codex 等常见调用方式。"
     >
-    <title>getai.run | AI API Relay Gateway</title>
+    <title>getai.run | AI 中转站</title>
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
-    <header class="site-header">
-      <a class="brand" href="/" aria-label="getai.run home">
-        <span class="brand-mark" aria-hidden="true">g</span>
-        <span>getai.run</span>
-      </a>
-      <nav class="site-nav" aria-label="Primary navigation">
-        <a href="#capabilities">Capabilities</a>
-        <a href="#compatibility">Compatibility</a>
-        <a href="#deploy">Deploy</a>
-        <a class="nav-cta" href="https://github.com/router-for-me/CLIProxyAPI">GitHub</a>
-      </nav>
-    </header>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="/" aria-label="getai.run 首页">
+          <span class="brand-mark" aria-hidden="true">G</span>
+          <div class="brand-text">
+            <strong>getai.run</strong>
+            <span>AI 中转站</span>
+          </div>
+        </a>
+        <nav class="site-nav" aria-label="主导航">
+          <a href="#features">核心能力</a>
+          <a href="#scenes">适用场景</a>
+          <a href="#access">接入方式</a>
+        </nav>
+      </header>
 
-    <main>
-      <section class="hero">
-        <div class="hero-content">
-          <p class="eyebrow">AI relay gateway for modern developer tools</p>
-          <h1>One proxy endpoint for OpenAI, Claude, Gemini, and Codex compatible clients.</h1>
-          <p class="hero-copy">
-            getai.run routes AI coding and automation clients through a unified API layer with OAuth,
-            model aliases, streaming, tool calls, and round-robin account balancing.
-          </p>
-          <div class="hero-actions" aria-label="Primary actions">
-            <a class="button button-primary" href="https://github.com/router-for-me/CLIProxyAPI">View on GitHub</a>
-            <a class="button button-secondary" href="https://help.router-for.me/">Read the docs</a>
-          </div>
-          <p class="endpoint-note">
-            Main website: <strong>getai.run</strong> | API endpoint: <strong>api.getai.run</strong>
-          </p>
-        </div>
-
-        <div class="gateway-panel" aria-label="Gateway routing preview">
-          <div class="panel-bar">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <div class="terminal-line">
-            <span class="prompt">$</span>
-            <span>curl https://api.getai.run/v1/chat/completions</span>
-          </div>
-          <div class="route-map">
-            <div class="client-stack">
-              <span>Codex CLI</span>
-              <span>Claude Code</span>
-              <span>Gemini CLI</span>
-              <span>OpenAI SDK</span>
+      <main>
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">稳定 · 统一 · 面向生产</p>
+            <h1>一个入口，连接主流 AI 模型与客户端</h1>
+            <p class="hero-text">
+              getai.run 提供统一的 AI 接入层，面向 OpenAI、Claude、Gemini、Codex 等生态，
+              适合开发者、团队和自动化系统以一致方式接入模型能力。
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="https://api.getai.run/v1/models">查看接口</a>
+              <a class="button button-secondary" href="#access">接入说明</a>
             </div>
-            <div class="gateway-core">
-              <span>getai.run</span>
-              <strong>routing + auth + balance</strong>
-            </div>
-            <div class="provider-stack">
-              <span>OpenAI</span>
-              <span>Claude</span>
-              <span>Gemini</span>
-              <span>Custom upstreams</span>
+            <div class="hero-notes">
+              <span>官网：getai.run</span>
+              <span>接口：api.getai.run</span>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section class="section" id="capabilities">
-        <div class="section-heading">
-          <p class="eyebrow">Capabilities</p>
-          <h2>Built for real AI client traffic.</h2>
-        </div>
-        <div class="feature-grid">
-          <article class="feature-card">
-            <h3>Unified API surface</h3>
-            <p>Serve OpenAI-style, Claude, Gemini, and Codex-compatible routes from one gateway.</p>
-          </article>
-          <article class="feature-card">
-            <h3>OAuth account routing</h3>
-            <p>Use local or multi-account OAuth credentials for supported CLI providers.</p>
-          </article>
-          <article class="feature-card">
-            <h3>Round-robin balancing</h3>
-            <p>Distribute requests across available credentials with cooldown-aware failover.</p>
-          </article>
-          <article class="feature-card">
-            <h3>Streaming, tools, images</h3>
-            <p>Handle streaming responses, function calling, tool use, and multimodal input.</p>
-          </article>
-        </div>
-      </section>
+          <div class="hero-panel" aria-label="接口示意">
+            <div class="panel-top">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="panel-body">
+              <div class="terminal-line">
+                <span class="prompt">$</span>
+                <span>curl https://api.getai.run/v1/chat/completions</span>
+              </div>
+              <div class="flow-grid">
+                <div class="flow-column">
+                  <b>客户端</b>
+                  <span>OpenAI SDK</span>
+                  <span>Claude Code</span>
+                  <span>Codex CLI</span>
+                  <span>Gemini CLI</span>
+                </div>
+                <div class="flow-core">
+                  <small>统一接入层</small>
+                  <strong>getai.run</strong>
+                  <em>路由 / 认证 / 转发</em>
+                </div>
+                <div class="flow-column">
+                  <b>模型侧</b>
+                  <span>OpenAI</span>
+                  <span>Claude</span>
+                  <span>Gemini</span>
+                  <span>自定义上游</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <section class="section split-section" id="compatibility">
-        <div>
-          <p class="eyebrow">Compatibility</p>
-          <h2>Keep the clients your team already uses.</h2>
+        <section class="section" id="features">
+          <div class="section-head">
+            <p class="eyebrow">核心能力</p>
+            <h2>围绕真实调用链路设计，而不是演示页面</h2>
+          </div>
+          <div class="card-grid">
+            <article class="info-card">
+              <h3>统一协议入口</h3>
+              <p>兼容主流 AI 客户端调用方式，减少多平台接入和切换成本。</p>
+            </article>
+            <article class="info-card">
+              <h3>稳定中转能力</h3>
+              <p>适合放在团队或业务侧前面，作为统一的模型访问出口。</p>
+            </article>
+            <article class="info-card">
+              <h3>多模型兼容</h3>
+              <p>面向 OpenAI、Claude、Gemini、Codex 等常见模型生态。</p>
+            </article>
+            <article class="info-card">
+              <h3>便于扩展</h3>
+              <p>可根据业务需求继续扩展鉴权、限流、路由与监控能力。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section split" id="scenes">
+          <div>
+            <p class="eyebrow">适用场景</p>
+            <h2>适合个人开发者，也适合团队统一接入</h2>
+            <p class="section-text">
+              无论你是在做编码助手接入、自动化脚本调用，还是团队内部模型访问统一出口，
+              都可以通过 getai.run 获得更稳定、更统一的调用体验。
+            </p>
+          </div>
+          <div class="tag-grid" aria-label="适用场景列表">
+            <span>代码助手接入</span>
+            <span>统一 API 出口</span>
+            <span>内部工具调用</span>
+            <span>自动化工作流</span>
+            <span>多模型切换</span>
+            <span>业务系统集成</span>
+          </div>
+        </section>
+
+        <section class="section access-section" id="access">
+          <div class="section-head compact">
+            <p class="eyebrow">接入方式</p>
+            <h2>官网与接口分离，结构更清晰</h2>
+          </div>
+          <div class="access-layout">
+            <div class="access-card primary">
+              <small>官网地址</small>
+              <strong>https://getai.run</strong>
+              <p>用于产品介绍、文档入口、品牌展示与后续官网内容承载。</p>
+            </div>
+            <div class="access-card">
+              <small>接口地址</small>
+              <strong>https://api.getai.run</strong>
+              <p>用于模型调用、客户端配置、程序接入和自动化请求。</p>
+            </div>
+            <div class="access-card">
+              <small>示例端点</small>
+              <strong>/v1/models</strong>
+              <p>可用于确认服务在线状态以及查看当前可用模型列表。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="cta-section">
+          <p class="eyebrow">立即开始</p>
+          <h2>现在就通过 api.getai.run 接入你的 AI 客户端</h2>
           <p>
-            Point AI coding tools, SDKs, and automation scripts at the gateway while preserving
-            familiar request shapes and provider-specific behavior where needed.
+            如果你已经完成客户端配置，可以直接开始请求；如果还在搭建阶段，官网将继续补充中文文档与接入说明。
           </p>
-        </div>
-        <div class="compat-list" aria-label="Compatible clients and protocols">
-          <span>OpenAI SDKs</span>
-          <span>Responses API</span>
-          <span>Claude Messages</span>
-          <span>Gemini generateContent</span>
-          <span>Codex WebSocket</span>
-          <span>Amp-compatible routes</span>
-        </div>
-      </section>
-
-      <section class="section deploy-section" id="deploy">
-        <div class="deploy-copy">
-          <p class="eyebrow">Self-hosting</p>
-          <h2>Deploy the gateway where your traffic belongs.</h2>
-          <p>
-            Run it locally, on a server, or behind your own domain. Keep auth material under your
-            control, configure upstream providers, and expose the public API hostname separately from
-            the homepage.
-          </p>
-        </div>
-        <div class="deploy-card">
-          <div>
-            <span class="stat">8317</span>
-            <span>default service port</span>
+          <div class="hero-actions center">
+            <a class="button button-primary" href="https://api.getai.run/v1/models">立即测试接口</a>
           </div>
-          <div>
-            <span class="stat">YAML</span>
-            <span>straightforward configuration</span>
-          </div>
-          <div>
-            <span class="stat">Go</span>
-            <span>single server binary</span>
-          </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      <section class="cta-section">
-        <p class="eyebrow">Start routing</p>
-        <h2>Use getai.run as the public homepage and api.getai.run as the API gateway.</h2>
-        <div class="hero-actions">
-          <a class="button button-primary" href="https://github.com/router-for-me/CLIProxyAPI">Deploy from source</a>
-          <a class="button button-secondary" href="https://help.router-for.me/">Configuration guide</a>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <span>getai.run</span>
-      <span>Open-source AI relay gateway powered by CLIProxyAPI.</span>
-    </footer>
+      <footer class="site-footer">
+        <span>© getai.run</span>
+        <span>中文 AI 中转服务</span>
+      </footer>
+    </div>
   </body>
 </html>
