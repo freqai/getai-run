@@ -19,6 +19,19 @@ const (
 	keyPrefix = "sk-getai-"
 )
 
+// KeyStore defines persistence for user-created downstream API keys.
+type KeyStore interface {
+	Create(name, group string, expiresAt time.Time) (PublicRecord, string, error)
+	CreateForOwner(ownerID, name, group string, expiresAt time.Time) (PublicRecord, string, error)
+	List() []PublicRecord
+	ListByOwner(ownerID string) []PublicRecord
+	Update(id string, update UpdateRequest) (PublicRecord, error)
+	UpdateForOwner(ownerID, id string, update UpdateRequest) (PublicRecord, error)
+	Delete(id string) error
+	DeleteForOwner(ownerID, id string) error
+	LookupKey(key string) (*Record, bool)
+}
+
 // Record describes one user-created downstream API key.
 type Record struct {
 	ID        string    `json:"id"`

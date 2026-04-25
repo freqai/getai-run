@@ -49,7 +49,7 @@ type Handler struct {
 	envSecret           string
 	logDir              string
 	postAuthHook        coreauth.PostAuthHook
-	userAPIKeyStore     *userkeys.Store
+	userAPIKeyStore     userkeys.KeyStore
 }
 
 // NewHandler creates a new management handler instance.

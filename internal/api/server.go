@@ -174,8 +174,8 @@ type Server struct {
 	envManagementSecret bool
 
 	localPassword string
-	userKeyStore  *userkeys.Store
-	portalStore   *portal.Store
+	userKeyStore  userkeys.KeyStore
+	portalStore   portal.DataStore
 
 	keepAliveEnabled   bool
 	keepAliveTimeout   time.Duration
@@ -240,15 +240,9 @@ func NewServer(cfg *config.Config, authManager *auth.Manager, accessManager *sdk
 	if err != nil {
 		wd = configFilePath
 	}
-	userKeyStore, errUserKeyStore := userkeys.NewStore(userkeys.DefaultPath(configFilePath))
-	if errUserKeyStore != nil {
-		log.WithError(errUserKeyStore).Warn("failed to initialize user api key store")
-	} else {
+	userKeyStore, portalStore := initializePortalStores(configFilePath)
+	if userKeyStore != nil {
 		sdkaccess.RegisterProvider(userkeys.ProviderType, userkeys.NewProvider(userKeyStore))
-	}
-	portalStore, errPortalStore := portal.NewStore(portal.DefaultPath(configFilePath))
-	if errPortalStore != nil {
-		log.WithError(errPortalStore).Warn("failed to initialize user portal store")
 	}
 
 	envAdminPassword, envAdminPasswordSet := os.LookupEnv("MANAGEMENT_PASSWORD")
@@ -490,6 +484,40 @@ func (s *Server) registerPortalRoutes() {
 		authenticated.POST("/orders", handler.CreateOrder)
 		authenticated.POST("/orders/:id/mock-pay", handler.MockPayOrder)
 	}
+}
+
+func initializePortalStores(configFilePath string) (userkeys.KeyStore, portal.DataStore) {
+	dsn := strings.TrimSpace(os.Getenv("PORTAL_DATABASE_URL"))
+	if dsn == "" {
+		dsn = strings.TrimSpace(os.Getenv("PORTAL_DB_DSN"))
+	}
+	schema := strings.TrimSpace(os.Getenv("PORTAL_DB_SCHEMA"))
+	if dsn != "" {
+		ctx := context.Background()
+		portalStore, errPortalStore := portal.NewPostgresStore(ctx, dsn, schema)
+		userKeyStore, errUserKeyStore := userkeys.NewPostgresStore(ctx, dsn, schema)
+		if errPortalStore == nil && errUserKeyStore == nil {
+			log.Info("user portal stores initialized with PostgreSQL")
+			return userKeyStore, portalStore
+		}
+		if errPortalStore != nil {
+			log.WithError(errPortalStore).Warn("failed to initialize postgres user portal store")
+		}
+		if errUserKeyStore != nil {
+			log.WithError(errUserKeyStore).Warn("failed to initialize postgres user api key store")
+		}
+		log.Warn("falling back to file-backed user portal stores")
+	}
+
+	userKeyStore, errUserKeyStore := userkeys.NewStore(userkeys.DefaultPath(configFilePath))
+	if errUserKeyStore != nil {
+		log.WithError(errUserKeyStore).Warn("failed to initialize user api key store")
+	}
+	portalStore, errPortalStore := portal.NewStore(portal.DefaultPath(configFilePath))
+	if errPortalStore != nil {
+		log.WithError(errPortalStore).Warn("failed to initialize user portal store")
+	}
+	return userKeyStore, portalStore
 }
 
 // AttachWebsocketRoute registers a websocket upgrade handler on the primary Gin engine.

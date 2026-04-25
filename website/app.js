@@ -8,7 +8,7 @@ const state = {
 };
 
 const apiOrigin = window.location.port === "4173"
-  ? `${window.location.protocol}//${window.location.hostname}:8317`
+  ? `${window.location.protocol}//${window.location.hostname}:8417`
   : window.location.origin;
 const apiBase = `${apiOrigin}/v0/portal`;
 
@@ -68,6 +68,9 @@ function setAuthMode(mode) {
   $("#authSubmit").textContent = isRegister ? "注册并进入控制台" : "登录";
   $("#switchAuthMode").textContent = isRegister ? "已有账号？去登录" : "没有账号？立即注册";
   $("#nameField").classList.toggle("hidden", !isRegister);
+  $("#codeField").classList.toggle("hidden", !isRegister);
+  $("#authCode").required = isRegister;
+  $("#authCode").value = "";
   $("#authError").textContent = "";
 }
 
@@ -218,9 +221,11 @@ $("#authForm").addEventListener("submit", async (event) => {
   const payload = {
     email: $("#authEmail").value,
     password: $("#authPassword").value,
-    code: $("#authCode").value,
   };
-  if (state.authMode === "register") payload.name = $("#authName").value;
+  if (state.authMode === "register") {
+    payload.name = $("#authName").value;
+    payload.code = $("#authCode").value;
+  }
   try {
     const data = await request(state.authMode === "register" ? "/register" : "/login", {
       method: "POST",

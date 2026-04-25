@@ -20,6 +20,19 @@ import (
 const sessionTTL = 30 * 24 * time.Hour
 const emailCodeTTL = 10 * time.Minute
 
+// DataStore defines the persistence surface for dashboard users and billing data.
+type DataStore interface {
+	CreateEmailCode(email, purpose string) (string, error)
+	VerifyEmailCode(email, purpose, code string) error
+	Register(email, password, name string) (PublicUser, string, error)
+	Login(email, password string) (PublicUser, string, error)
+	Logout(token string) error
+	UserForToken(token string) (PublicUser, bool)
+	CreateOrder(userID, planID string) (PublicOrder, error)
+	ListOrders(userID string) []PublicOrder
+	MarkOrderPaid(userID, orderID string) (PublicOrder, PublicUser, error)
+}
+
 // User is a registered dashboard account.
 type User struct {
 	ID           string    `json:"id"`

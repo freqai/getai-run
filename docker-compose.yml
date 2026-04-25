@@ -1,4 +1,20 @@
 services:
+  postgres:
+    image: postgres:${POSTGRES_IMAGE_TAG:-16-alpine}
+    container_name: getai-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-getai_run}
+      POSTGRES_USER: ${POSTGRES_USER:-getai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-getai} -d ${POSTGRES_DB:-getai_run}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   cli-proxy-api:
     image: ${CLI_PROXY_IMAGE:-eceasy/cli-proxy-api:latest}
     pull_policy: always
@@ -10,10 +26,20 @@ services:
         COMMIT: ${COMMIT:-none}
         BUILD_DATE: ${BUILD_DATE:-unknown}
     container_name: cli-proxy-api
-    # env_file:
-    #   - .env
+    env_file:
+      - .env
     environment:
       DEPLOY: ${DEPLOY:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
+      PORTAL_DATABASE_URL: postgresql://${POSTGRES_USER:-getai}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-getai_run}?sslmode=disable
+      PORTAL_DB_SCHEMA: ${PORTAL_DB_SCHEMA:-public}
+      PGSTORE_DSN: ${PGSTORE_DSN:-}
+      PGSTORE_SCHEMA: ${PGSTORE_SCHEMA:-}
+      PGSTORE_LOCAL_PATH: ${PGSTORE_LOCAL_PATH:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "8317:8317"
       - "8085:8085"
@@ -26,3 +52,6 @@ services:
       - ${CLI_PROXY_AUTH_PATH:-./auths}:/root/.cli-proxy-api
       - ${CLI_PROXY_LOG_PATH:-./logs}:/CLIProxyAPI/logs
     restart: unless-stopped
+
+volumes:
+  postgres-data:

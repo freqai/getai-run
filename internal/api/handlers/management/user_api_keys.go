@@ -12,7 +12,7 @@ import (
 )
 
 // SetUserAPIKeyStore wires the user-created API key store into management APIs.
-func (h *Handler) SetUserAPIKeyStore(store *userkeys.Store) {
+func (h *Handler) SetUserAPIKeyStore(store userkeys.KeyStore) {
 	h.mu.Lock()
 	h.userAPIKeyStore = store
 	h.mu.Unlock()
@@ -100,7 +100,7 @@ func (h *Handler) DeleteUserAPIKey(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func (h *Handler) getUserAPIKeyStore() *userkeys.Store {
+func (h *Handler) getUserAPIKeyStore() userkeys.KeyStore {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.userAPIKeyStore

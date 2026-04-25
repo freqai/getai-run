@@ -40,6 +40,25 @@ jobs:
             end
             mkdir -p logs auths
 
+            if not test -f .env
+              echo ">>> Bootstrapping .env from .env.example..."
+              cp .env.example .env
+            end
+
+            if not grep -q '^POSTGRES_PASSWORD=' .env
+              set DB_PASS (openssl rand -hex 24)
+              printf '\nPOSTGRES_PASSWORD=%s\n' $DB_PASS >> .env
+            end
+            if not grep -q '^POSTGRES_USER=' .env
+              printf 'POSTGRES_USER=getai\n' >> .env
+            end
+            if not grep -q '^POSTGRES_DB=' .env
+              printf 'POSTGRES_DB=getai_run\n' >> .env
+            end
+            if not grep -q '^PORTAL_DB_SCHEMA=' .env
+              printf 'PORTAL_DB_SCHEMA=public\n' >> .env
+            end
+
             echo ">>> Updating website files..."
             mkdir -p /var/www/getai.run
             if test -d website

@@ -20,11 +20,11 @@ const (
 
 // Provider validates user-created API keys from the runtime key store.
 type Provider struct {
-	store *Store
+	store KeyStore
 }
 
 // NewProvider constructs a user API key access provider.
-func NewProvider(store *Store) *Provider {
+func NewProvider(store KeyStore) *Provider {
 	return &Provider{store: store}
 }
 

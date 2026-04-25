@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -79,7 +80,22 @@ func (m *ResendMailer) SendAuthCode(ctx context.Context, email, purpose, code st
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("resend email failed with status %d", resp.StatusCode)
+		message := strings.TrimSpace(readSmallBody(resp.Body, 4096))
+		if message == "" {
+			return fmt.Errorf("resend email failed with status %d", resp.StatusCode)
+		}
+		return fmt.Errorf("resend email failed with status %d: %s", resp.StatusCode, message)
 	}
 	return nil
+}
+
+func readSmallBody(r io.Reader, limit int64) string {
+	if r == nil {
+		return ""
+	}
+	data, err := io.ReadAll(io.LimitReader(r, limit))
+	if err != nil {
+		return ""
+	}
+	return string(data)
 }

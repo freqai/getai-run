@@ -16,13 +16,13 @@ const userContextKey = "portal_user"
 
 // Handler serves user-facing dashboard APIs.
 type Handler struct {
-	store        *portalstore.Store
-	userKeyStore *userkeys.Store
+	store        portalstore.DataStore
+	userKeyStore userkeys.KeyStore
 	emailer      portalstore.EmailSender
 }
 
 // NewHandler creates a user portal API handler.
-func NewHandler(store *portalstore.Store, userKeyStore *userkeys.Store, emailer portalstore.EmailSender) *Handler {
+func NewHandler(store portalstore.DataStore, userKeyStore userkeys.KeyStore, emailer portalstore.EmailSender) *Handler {
 	return &Handler{store: store, userKeyStore: userKeyStore, emailer: emailer}
 }
 
@@ -105,17 +105,10 @@ func (h *Handler) Login(c *gin.Context) {
 	var req struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
-		Code     string `json:"code"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
-	}
-	if h.emailer != nil {
-		if err := h.store.VerifyEmailCode(req.Email, "login", req.Code); err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid verification code"})
-			return
-		}
 	}
 	user, token, err := h.store.Login(req.Email, req.Password)
 	if err != nil {
