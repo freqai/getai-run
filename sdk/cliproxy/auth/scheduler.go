@@ -51,6 +51,7 @@ type scheduledAuthMeta struct {
 	auth              *Auth
 	providerKey       string
 	priority          int
+	group             string
 	virtualParent     string
 	websocketEnabled  bool
 	supportedModelSet map[string]struct{}
@@ -244,6 +245,7 @@ func (s *authScheduler) pickSingle(ctx context.Context, provider, model string, 
 	providerKey := strings.ToLower(strings.TrimSpace(provider))
 	modelKey := canonicalModelKey(model)
 	pinnedAuthID := pinnedAuthIDFromMetadata(opts.Metadata)
+	poolGroup := requestedPoolGroup(opts.Metadata)
 	preferWebsocket := cliproxyexecutor.DownstreamWebsocket(ctx) && providerKey == "codex" && pinnedAuthID == ""
 
 	s.mu.Lock()
@@ -261,6 +263,9 @@ func (s *authScheduler) pickSingle(ctx context.Context, provider, model string, 
 			return false
 		}
 		if pinnedAuthID != "" && entry.auth.ID != pinnedAuthID {
+			return false
+		}
+		if poolGroup != "" && !strings.EqualFold(entry.meta.group, poolGroup) {
 			return false
 		}
 		if len(tried) > 0 {
@@ -299,6 +304,7 @@ func (s *authScheduler) pickMixed(ctx context.Context, providers []string, model
 		return picked, providerKey, nil
 	}
 	pinnedAuthID := pinnedAuthIDFromMetadata(opts.Metadata)
+	poolGroup := requestedPoolGroup(opts.Metadata)
 	modelKey := canonicalModelKey(model)
 
 	s.mu.Lock()
@@ -317,6 +323,9 @@ func (s *authScheduler) pickMixed(ctx context.Context, providers []string, model
 			if entry == nil || entry.auth == nil || entry.auth.ID != pinnedAuthID {
 				return false
 			}
+			if poolGroup != "" && !strings.EqualFold(entry.meta.group, poolGroup) {
+				return false
+			}
 			if len(tried) == 0 {
 				return true
 			}
@@ -329,7 +338,7 @@ func (s *authScheduler) pickMixed(ctx context.Context, providers []string, model
 		return nil, "", shard.unavailableErrorLocked("mixed", model, predicate)
 	}
 
-	predicate := triedPredicate(tried)
+	predicate := poolGroupPredicate(poolGroup, tried)
 	candidateShards := make([]*modelScheduler, len(normalized))
 	bestPriority := 0
 	hasCandidate := false
@@ -354,7 +363,7 @@ func (s *authScheduler) pickMixed(ctx context.Context, providers []string, model
 		}
 	}
 	if !hasCandidate {
-		return nil, "", s.mixedUnavailableErrorLocked(normalized, model, tried)
+		return nil, "", s.mixedUnavailableErrorLocked(normalized, model, tried, poolGroup)
 	}
 
 	if s.strategy == schedulerStrategyFillFirst {
@@ -368,7 +377,7 @@ func (s *authScheduler) pickMixed(ctx context.Context, providers []string, model
 				return picked, providerKey, nil
 			}
 		}
-		return nil, "", s.mixedUnavailableErrorLocked(normalized, model, tried)
+		return nil, "", s.mixedUnavailableErrorLocked(normalized, model, tried, poolGroup)
 	}
 
 	cursorKey := strings.Join(normalized, ",") + ":" + modelKey
@@ -385,7 +394,7 @@ func (s *authScheduler) pickMixed(ctx context.Context, providers []string, model
 		segmentEnds[providerIndex] = totalWeight
 	}
 	if totalWeight == 0 {
-		return nil, "", s.mixedUnavailableErrorLocked(normalized, model, tried)
+		return nil, "", s.mixedUnavailableErrorLocked(normalized, model, tried, poolGroup)
 	}
 
 	startSlot := s.mixedCursors[cursorKey] % totalWeight
@@ -400,7 +409,7 @@ func (s *authScheduler) pickMixed(ctx context.Context, providers []string, model
 		}
 	}
 	if startProviderIndex < 0 {
-		return nil, "", s.mixedUnavailableErrorLocked(normalized, model, tried)
+		return nil, "", s.mixedUnavailableErrorLocked(normalized, model, tried, poolGroup)
 	}
 
 	slot := startSlot
@@ -424,12 +433,13 @@ func (s *authScheduler) pickMixed(ctx context.Context, providers []string, model
 		s.mixedCursors[cursorKey] = slot + 1
 		return picked, providerKey, nil
 	}
-	return nil, "", s.mixedUnavailableErrorLocked(normalized, model, tried)
+	return nil, "", s.mixedUnavailableErrorLocked(normalized, model, tried, poolGroup)
 }
 
 // mixedUnavailableErrorLocked synthesizes the mixed-provider cooldown or unavailable error.
-func (s *authScheduler) mixedUnavailableErrorLocked(providers []string, model string, tried map[string]struct{}) error {
+func (s *authScheduler) mixedUnavailableErrorLocked(providers []string, model string, tried map[string]struct{}, poolGroup string) error {
 	now := time.Now()
+	predicate := poolGroupPredicate(poolGroup, tried)
 	total := 0
 	cooldownCount := 0
 	earliest := time.Time{}
@@ -442,7 +452,7 @@ func (s *authScheduler) mixedUnavailableErrorLocked(providers []string, model st
 		if shard == nil {
 			continue
 		}
-		localTotal, localCooldownCount, localEarliest := shard.availabilitySummaryLocked(triedPredicate(tried))
+		localTotal, localCooldownCount, localEarliest := shard.availabilitySummaryLocked(predicate)
 		total += localTotal
 		cooldownCount += localCooldownCount
 		if !localEarliest.IsZero() && (earliest.IsZero() || localEarliest.Before(earliest)) {
@@ -473,6 +483,20 @@ func triedPredicate(tried map[string]struct{}) func(*scheduledAuth) bool {
 		}
 		_, ok := tried[entry.auth.ID]
 		return !ok
+	}
+}
+
+func poolGroupPredicate(poolGroup string, tried map[string]struct{}) func(*scheduledAuth) bool {
+	base := triedPredicate(tried)
+	poolGroup = strings.TrimSpace(poolGroup)
+	if poolGroup == "" {
+		return base
+	}
+	return func(entry *scheduledAuth) bool {
+		if !base(entry) || entry == nil || entry.meta == nil {
+			return false
+		}
+		return strings.EqualFold(entry.meta.group, poolGroup)
 	}
 }
 
@@ -566,6 +590,7 @@ func buildScheduledAuthMeta(auth *Auth) *scheduledAuthMeta {
 		auth:              auth,
 		providerKey:       providerKey,
 		priority:          authPriority(auth),
+		group:             authPoolGroup(auth),
 		virtualParent:     virtualParent,
 		websocketEnabled:  authWebsocketsEnabled(auth),
 		supportedModelSet: supportedModelSetForAuth(auth.ID),

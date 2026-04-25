@@ -157,6 +157,20 @@ func synthesizeFileAuths(ctx *SynthesisContext, fullPath string, data []byte) []
 			}
 		}
 	}
+	// Read account pool group from auth file.
+	if rawGroup, ok := metadata["group"]; ok {
+		if group, isStr := rawGroup.(string); isStr {
+			if trimmed := strings.TrimSpace(group); trimmed != "" {
+				a.Attributes["group"] = trimmed
+			}
+		}
+	} else if rawGroup, ok := metadata["pool_group"]; ok {
+		if group, isStr := rawGroup.(string); isStr {
+			if trimmed := strings.TrimSpace(group); trimmed != "" {
+				a.Attributes["group"] = trimmed
+			}
+		}
+	}
 	coreauth.ApplyCustomHeadersFromMetadata(a)
 	ApplyAuthExcludedModelsMeta(a, cfg, perAccountExcluded, "oauth")
 	// For codex auth files, extract plan_type from the JWT id_token.
@@ -229,6 +243,10 @@ func SynthesizeGeminiVirtualAuths(primary *coreauth.Auth, metadata map[string]an
 		// Propagate priority from primary auth to virtual auths
 		if priorityVal, hasPriority := primary.Attributes["priority"]; hasPriority && priorityVal != "" {
 			attrs["priority"] = priorityVal
+		}
+		// Propagate group from primary auth to virtual auths.
+		if groupVal, hasGroup := primary.Attributes["group"]; hasGroup && groupVal != "" {
+			attrs["group"] = groupVal
 		}
 		// Propagate note from primary auth to virtual auths
 		if noteVal, hasNote := primary.Attributes["note"]; hasNote && noteVal != "" {

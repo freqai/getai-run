@@ -462,6 +462,21 @@ func (h *Handler) buildAuthFileEntry(auth *coreauth.Auth) gin.H {
 			}
 		}
 	}
+	if group := strings.TrimSpace(authAttribute(auth, "group")); group != "" {
+		entry["group"] = group
+	} else if group := strings.TrimSpace(authAttribute(auth, "pool_group")); group != "" {
+		entry["group"] = group
+	} else if auth.Metadata != nil {
+		if rawGroup, ok := auth.Metadata["group"].(string); ok {
+			if trimmed := strings.TrimSpace(rawGroup); trimmed != "" {
+				entry["group"] = trimmed
+			}
+		} else if rawGroup, ok := auth.Metadata["pool_group"].(string); ok {
+			if trimmed := strings.TrimSpace(rawGroup); trimmed != "" {
+				entry["group"] = trimmed
+			}
+		}
+	}
 	return entry
 }
 
@@ -1118,7 +1133,7 @@ func (h *Handler) PatchAuthFileStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "disabled": *req.Disabled})
 }
 
-// PatchAuthFileFields updates editable fields (prefix, proxy_url, headers, priority, note) of an auth file.
+// PatchAuthFileFields updates editable fields (prefix, proxy_url, headers, priority, note, group) of an auth file.
 func (h *Handler) PatchAuthFileFields(c *gin.Context) {
 	if h.authManager == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "core auth manager unavailable"})
@@ -1132,6 +1147,7 @@ func (h *Handler) PatchAuthFileFields(c *gin.Context) {
 		Headers  map[string]string `json:"headers"`
 		Priority *int              `json:"priority"`
 		Note     *string           `json:"note"`
+		Group    *string           `json:"group"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
@@ -1268,7 +1284,7 @@ func (h *Handler) PatchAuthFileFields(c *gin.Context) {
 			changed = true
 		}
 	}
-	if req.Priority != nil || req.Note != nil {
+	if req.Priority != nil || req.Note != nil || req.Group != nil {
 		if targetAuth.Metadata == nil {
 			targetAuth.Metadata = make(map[string]any)
 		}
@@ -1293,6 +1309,18 @@ func (h *Handler) PatchAuthFileFields(c *gin.Context) {
 			} else {
 				targetAuth.Metadata["note"] = trimmedNote
 				targetAuth.Attributes["note"] = trimmedNote
+			}
+		}
+		if req.Group != nil {
+			trimmedGroup := strings.TrimSpace(*req.Group)
+			if trimmedGroup == "" {
+				delete(targetAuth.Metadata, "group")
+				delete(targetAuth.Metadata, "pool_group")
+				delete(targetAuth.Attributes, "group")
+				delete(targetAuth.Attributes, "pool_group")
+			} else {
+				targetAuth.Metadata["group"] = trimmedGroup
+				targetAuth.Attributes["group"] = trimmedGroup
 			}
 		}
 		changed = true

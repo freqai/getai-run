@@ -24,15 +24,20 @@
           <a href="/docs/">文档</a>
           <a href="#faq">FAQ</a>
         </nav>
+        <div class="header-actions">
+          <button class="button button-secondary compact" type="button" data-auth-open="login">登录</button>
+          <button class="button button-primary compact" type="button" data-auth-open="register">注册</button>
+          <button class="button button-secondary compact hidden" type="button" id="openConsole">控制台</button>
+        </div>
       </header>
 
-      <main>
+      <main id="marketingPage">
         <section class="hero" id="quickstart">
           <div class="hero-head">
             <p class="eyebrow">OpenAI · Claude · Gemini · Codex</p>
-            <h1>3 分钟快速接入 AI 中转站</h1>
+            <h1>3 分钟快速接入</h1>
             <p class="hero-text">
-              一个 API 入口连接主流模型和常见 AI 客户端。注册、换地址、开始调用，现有 OpenAI SDK 只需要改一行配置。
+              一个 API 入口连接主流模型和常见 AI 客户端，OpenAI SDK 只需改一行配置。
             </p>
           </div>
 
@@ -42,7 +47,7 @@
                 <span class="step-index">1</span>
                 <div>
                   <h2>注册，创建密钥</h2>
-                  <p>注册账户后在控制台生成专属 API Key，无需信用卡即可开始配置。</p>
+                  <p>注册账户后生成专属 API Key，无需信用卡即可开始配置。</p>
                   <div class="step-actions">
                     <a class="button button-primary" href="/docs/">获取 API 密钥</a>
                     <a class="button button-secondary" href="/docs/">查看文档</a>
@@ -53,7 +58,7 @@
                 <span class="step-index">2</span>
                 <div>
                   <h2>修改配置</h2>
-                  <p>将 API 端点改为 getai.run 地址，OpenAI SDK、Claude Code、Codex CLI 等客户端都能快速接入。</p>
+                  <p>将 API 端点改为 getai.run，常见 SDK 和 CLI 客户端都能快速接入。</p>
                   <div class="step-actions">
                     <a class="button button-primary" href="/docs/">查看文档</a>
                     <a class="button button-secondary" href="https://api.getai.run/v1/models">在线测试</a>
@@ -64,7 +69,7 @@
                 <span class="step-index">3</span>
                 <div>
                   <h2>开始调用模型</h2>
-                  <p>通过统一接口访问 GPT、Claude、Gemini、Codex 等模型，把路由、认证和转发交给中转站。</p>
+                  <p>通过统一接口访问 GPT、Claude、Gemini、Codex 等模型。</p>
                 </div>
               </li>
             </ol>
@@ -251,10 +256,168 @@
         </section>
       </main>
 
+      <main class="console-app hidden" id="consoleApp">
+        <aside class="console-sidebar">
+          <a class="brand console-brand" href="/" aria-label="getai.run 首页">
+            <span class="brand-mark" aria-hidden="true">G</span>
+            <strong>getai.run</strong>
+          </a>
+          <nav class="console-nav" aria-label="控制台导航">
+            <button class="active" type="button" data-console-tab="overview">仪表盘</button>
+            <button type="button" data-console-tab="keys">API 密钥</button>
+            <button type="button" data-console-tab="billing">充值下单</button>
+            <button type="button" data-console-tab="orders">我的订单</button>
+            <button type="button" data-console-tab="docs">文档</button>
+          </nav>
+        </aside>
+
+        <section class="console-main">
+          <header class="console-topbar">
+            <div>
+              <p class="eyebrow">User Console</p>
+              <h1 id="consoleTitle">仪表盘</h1>
+            </div>
+            <div class="console-user">
+              <span class="balance-pill" id="balancePill">$0.00</span>
+              <span class="user-pill" id="userPill">User</span>
+              <button class="button button-secondary compact" type="button" id="logoutButton">退出</button>
+            </div>
+          </header>
+
+          <section class="console-panel active" id="panel-overview">
+            <div class="metric-grid">
+              <article class="metric-card">
+                <span>可用余额</span>
+                <strong id="overviewBalance">$0.00</strong>
+              </article>
+              <article class="metric-card">
+                <span>API 密钥</span>
+                <strong id="overviewKeyCount">0</strong>
+              </article>
+              <article class="metric-card">
+                <span>最近订单</span>
+                <strong id="overviewOrderCount">0</strong>
+              </article>
+            </div>
+            <div class="console-card">
+              <div class="console-card-head">
+                <div>
+                  <h2>快速开始</h2>
+                  <p>创建 API Key 后，将客户端 base_url 指向当前服务地址即可调用。</p>
+                </div>
+                <button class="button button-primary" type="button" data-console-tab="keys">创建密钥</button>
+              </div>
+              <pre class="console-code"><code>curl --request GET \
+  --url http://127.0.0.1:8317/v1/models \
+  --header 'Authorization: Bearer &lt;你的 API Key&gt;'</code></pre>
+            </div>
+          </section>
+
+          <section class="console-panel" id="panel-keys">
+            <div class="console-toolbar">
+              <div class="search-box">搜索名称或 Key...</div>
+              <button class="icon-button" type="button" id="refreshKeys" aria-label="刷新">↻</button>
+              <button class="button button-primary" type="button" id="createKeyButton">创建密钥</button>
+            </div>
+            <div class="data-table" id="keysTable"></div>
+          </section>
+
+          <section class="console-panel" id="panel-billing">
+            <div class="console-card">
+              <div class="console-card-head">
+                <div>
+                  <h2>充值下单</h2>
+                  <p>当前接入的是本地订单接口，生产支付可替换为支付平台回调。</p>
+                </div>
+              </div>
+              <div class="plan-grid" id="planGrid"></div>
+            </div>
+          </section>
+
+          <section class="console-panel" id="panel-orders">
+            <div class="console-toolbar">
+              <div>
+                <h2>我的订单</h2>
+                <p>查看充值订单状态。</p>
+              </div>
+              <button class="icon-button" type="button" id="refreshOrders" aria-label="刷新">↻</button>
+            </div>
+            <div class="data-table" id="ordersTable"></div>
+          </section>
+
+          <section class="console-panel" id="panel-docs">
+            <div class="console-card">
+              <h2>文档</h2>
+              <p>API 兼容 OpenAI、Gemini、Claude 与 Codex 常见客户端。更多接入说明请查看文档页。</p>
+              <a class="button button-primary" href="/docs/">打开文档</a>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <dialog class="auth-dialog" id="authDialog">
+        <form class="auth-card" id="authForm">
+          <button class="dialog-close" type="button" id="closeAuth" aria-label="关闭">×</button>
+          <p class="eyebrow" id="authModeText">Login</p>
+          <h2 id="authTitle">登录 getai.run</h2>
+          <label id="nameField">
+            名称
+            <input id="authName" name="name" autocomplete="name" placeholder="你的名称">
+          </label>
+          <label>
+            邮箱
+            <input id="authEmail" name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+          </label>
+          <label>
+            邮箱验证码
+            <div class="code-input-row">
+              <input id="authCode" name="code" inputmode="numeric" autocomplete="one-time-code" required placeholder="6 位验证码">
+              <button class="button button-secondary compact" type="button" id="sendAuthCode">发送验证码</button>
+            </div>
+          </label>
+          <label>
+            密码
+            <input id="authPassword" name="password" type="password" autocomplete="current-password" required placeholder="至少 8 位">
+          </label>
+          <p class="form-error" id="authError"></p>
+          <button class="button button-primary" type="submit" id="authSubmit">登录</button>
+          <button class="text-button" type="button" id="switchAuthMode">没有账号？立即注册</button>
+        </form>
+      </dialog>
+
+      <dialog class="auth-dialog" id="keyDialog">
+        <form class="auth-card" id="keyForm">
+          <button class="dialog-close" type="button" id="closeKeyDialog" aria-label="关闭">×</button>
+          <p class="eyebrow">API Key</p>
+          <h2>创建密钥</h2>
+          <label>
+            名称
+            <input id="keyName" name="name" required placeholder="我的 API 密钥">
+          </label>
+          <label>
+            分组
+            <select id="keyGroup" name="group">
+              <option value="">默认号池</option>
+              <option value="claude">claude</option>
+              <option value="codex">codex</option>
+              <option value="gemini">gemini</option>
+            </select>
+          </label>
+          <p class="form-error" id="keyError"></p>
+          <button class="button button-primary" type="submit">创建</button>
+          <div class="new-key-box hidden" id="newKeyBox">
+            <span>请立即复制保存，之后不会再次显示。</span>
+            <code id="newKeyValue"></code>
+            <button class="button button-secondary compact" type="button" id="copyNewKey">复制</button>
+          </div>
+        </form>
+      </dialog>
+
       <footer class="site-footer">
         <span>© getai.run</span>
         <span>中文 AI 中转服务</span>
       </footer>
     </div>
+    <script src="./app.js"></script>
   </body>
 </html>

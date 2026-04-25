@@ -377,6 +377,9 @@ type ClaudeKey struct {
 	// Prefix optionally namespaces models for this credential (e.g., "teamA/claude-sonnet-4").
 	Prefix string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
 
+	// Group optionally assigns this credential to an account pool group.
+	Group string `yaml:"group,omitempty" json:"group,omitempty"`
+
 	// BaseURL is the base URL for the Claude API endpoint.
 	// If empty, the default Claude API URL will be used.
 	BaseURL string `yaml:"base-url" json:"base-url"`
@@ -430,6 +433,9 @@ type CodexKey struct {
 	// Prefix optionally namespaces models for this credential (e.g., "teamA/gpt-5-codex").
 	Prefix string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
 
+	// Group optionally assigns this credential to an account pool group.
+	Group string `yaml:"group,omitempty" json:"group,omitempty"`
+
 	// BaseURL is the base URL for the Codex API endpoint.
 	// If empty, the default Codex API URL will be used.
 	BaseURL string `yaml:"base-url" json:"base-url"`
@@ -478,6 +484,9 @@ type GeminiKey struct {
 	// Prefix optionally namespaces models for this credential (e.g., "teamA/gemini-3-pro-preview").
 	Prefix string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
 
+	// Group optionally assigns this credential to an account pool group.
+	Group string `yaml:"group,omitempty" json:"group,omitempty"`
+
 	// BaseURL optionally overrides the Gemini API endpoint.
 	BaseURL string `yaml:"base-url,omitempty" json:"base-url,omitempty"`
 
@@ -521,6 +530,9 @@ type OpenAICompatibility struct {
 
 	// Prefix optionally namespaces model aliases for this provider (e.g., "teamA/kimi-k2").
 	Prefix string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
+
+	// Group optionally assigns this provider's credentials to an account pool group.
+	Group string `yaml:"group,omitempty" json:"group,omitempty"`
 
 	// BaseURL is the base URL for the external OpenAI-compatible API endpoint.
 	BaseURL string `yaml:"base-url" json:"base-url"`
@@ -847,6 +859,7 @@ func (cfg *Config) SanitizeOpenAICompatibility() {
 		e := cfg.OpenAICompatibility[i]
 		e.Name = strings.TrimSpace(e.Name)
 		e.Prefix = normalizeModelPrefix(e.Prefix)
+		e.Group = strings.TrimSpace(e.Group)
 		e.BaseURL = strings.TrimSpace(e.BaseURL)
 		e.Headers = NormalizeHeaders(e.Headers)
 		if e.BaseURL == "" {
@@ -868,6 +881,7 @@ func (cfg *Config) SanitizeCodexKeys() {
 	for i := range cfg.CodexKey {
 		e := cfg.CodexKey[i]
 		e.Prefix = normalizeModelPrefix(e.Prefix)
+		e.Group = strings.TrimSpace(e.Group)
 		e.BaseURL = strings.TrimSpace(e.BaseURL)
 		e.Headers = NormalizeHeaders(e.Headers)
 		e.ExcludedModels = NormalizeExcludedModels(e.ExcludedModels)
@@ -887,6 +901,7 @@ func (cfg *Config) SanitizeClaudeKeys() {
 	for i := range cfg.ClaudeKey {
 		entry := &cfg.ClaudeKey[i]
 		entry.Prefix = normalizeModelPrefix(entry.Prefix)
+		entry.Group = strings.TrimSpace(entry.Group)
 		entry.Headers = NormalizeHeaders(entry.Headers)
 		entry.ExcludedModels = NormalizeExcludedModels(entry.ExcludedModels)
 	}
@@ -908,6 +923,7 @@ func (cfg *Config) SanitizeGeminiKeys() {
 			continue
 		}
 		entry.Prefix = normalizeModelPrefix(entry.Prefix)
+		entry.Group = strings.TrimSpace(entry.Group)
 		entry.BaseURL = strings.TrimSpace(entry.BaseURL)
 		entry.ProxyURL = strings.TrimSpace(entry.ProxyURL)
 		entry.Headers = NormalizeHeaders(entry.Headers)

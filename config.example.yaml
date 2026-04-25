@@ -35,7 +35,8 @@ remote-management:
 # Authentication directory (supports ~ for home directory)
 auth-dir: "~/.cli-proxy-api"
 
-# API keys for authentication
+# Legacy static API keys for authentication. Prefer creating runtime user API keys
+# through /v0/management/user-api-keys for per-user grouping and lifecycle control.
 api-keys:
   - "your-api-key-1"
   - "your-api-key-2"
@@ -139,6 +140,7 @@ nonstream-keepalive-interval: 0
 # gemini-api-key:
 #   - api-key: "AIzaSy...01"
 #     prefix: "test" # optional: require calls like "test/gemini-3-pro-preview" to target this credential
+#     group: "default" # optional: account pool group matched by user-created API keys
 #     base-url: "https://generativelanguage.googleapis.com"
 #     headers:
 #       X-Custom-Header: "custom-value"
@@ -158,6 +160,7 @@ nonstream-keepalive-interval: 0
 # codex-api-key:
 #   - api-key: "sk-atSM..."
 #     prefix: "test" # optional: require calls like "test/gpt-5-codex" to target this credential
+#     group: "default" # optional: account pool group matched by user-created API keys
 #     base-url: "https://www.example.com" # use the custom codex API endpoint
 #     headers:
 #       X-Custom-Header: "custom-value"
@@ -177,6 +180,7 @@ nonstream-keepalive-interval: 0
 #   - api-key: "sk-atSM..." # use the official claude API key, no need to set the base url
 #   - api-key: "sk-atSM..."
 #     prefix: "test" # optional: require calls like "test/claude-sonnet-latest" to target this credential
+#     group: "default" # optional: account pool group matched by user-created API keys
 #     base-url: "https://www.example.com" # use the custom claude API endpoint
 #     headers:
 #       X-Custom-Header: "custom-value"
@@ -230,6 +234,7 @@ nonstream-keepalive-interval: 0
 # openai-compatibility:
 #   - name: "openrouter" # The name of the provider; it will be used in the user agent and other places.
 #     prefix: "test" # optional: require calls like "test/kimi-k2" to target this provider's credentials
+#     group: "default" # optional: account pool group matched by user-created API keys
 #     base-url: "https://openrouter.ai/api/v1" # The base URL of the provider.
 #     headers:
 #       X-Custom-Header: "custom-value"

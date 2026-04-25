@@ -128,6 +128,52 @@ func authPriority(auth *Auth) int {
 	return parsed
 }
 
+func authPoolGroup(auth *Auth) string {
+	if auth == nil {
+		return ""
+	}
+	if auth.Attributes != nil {
+		if group := strings.TrimSpace(auth.Attributes["group"]); group != "" {
+			return group
+		}
+		if group := strings.TrimSpace(auth.Attributes["pool_group"]); group != "" {
+			return group
+		}
+	}
+	if auth.Metadata != nil {
+		if raw, ok := auth.Metadata["group"].(string); ok {
+			return strings.TrimSpace(raw)
+		}
+		if raw, ok := auth.Metadata["pool_group"].(string); ok {
+			return strings.TrimSpace(raw)
+		}
+	}
+	return ""
+}
+
+func requestedPoolGroup(metadata map[string]any) string {
+	if len(metadata) == 0 {
+		return ""
+	}
+	if raw, ok := metadata["pool_group"]; ok {
+		switch v := raw.(type) {
+		case string:
+			return strings.TrimSpace(v)
+		case []byte:
+			return strings.TrimSpace(string(v))
+		}
+	}
+	return ""
+}
+
+func authMatchesPoolGroup(auth *Auth, group string) bool {
+	group = strings.TrimSpace(group)
+	if group == "" {
+		return true
+	}
+	return strings.EqualFold(authPoolGroup(auth), group)
+}
+
 func canonicalModelKey(model string) string {
 	model = strings.TrimSpace(model)
 	if model == "" {

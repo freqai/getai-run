@@ -119,6 +119,33 @@ func TestSchedulerPick_FillFirstSticksToFirstReady(t *testing.T) {
 	}
 }
 
+func TestSchedulerPick_FiltersByPoolGroup(t *testing.T) {
+	t.Parallel()
+
+	scheduler := newSchedulerForTest(
+		&RoundRobinSelector{},
+		&Auth{ID: "default", Provider: "gemini"},
+		&Auth{ID: "paid-a", Provider: "gemini", Attributes: map[string]string{"group": "paid"}},
+		&Auth{ID: "paid-b", Provider: "gemini", Attributes: map[string]string{"group": "paid"}},
+		&Auth{ID: "free", Provider: "gemini", Attributes: map[string]string{"group": "free"}},
+	)
+
+	opts := cliproxyexecutor.Options{Metadata: map[string]any{"pool_group": "paid"}}
+	want := []string{"paid-a", "paid-b", "paid-a"}
+	for index, wantID := range want {
+		got, errPick := scheduler.pickSingle(context.Background(), "gemini", "", opts, nil)
+		if errPick != nil {
+			t.Fatalf("pickSingle() #%d error = %v", index, errPick)
+		}
+		if got == nil {
+			t.Fatalf("pickSingle() #%d auth = nil", index)
+		}
+		if got.ID != wantID {
+			t.Fatalf("pickSingle() #%d auth.ID = %q, want %q", index, got.ID, wantID)
+		}
+	}
+}
+
 func TestSchedulerPick_PromotesExpiredCooldownBeforePick(t *testing.T) {
 	t.Parallel()
 

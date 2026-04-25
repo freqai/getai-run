@@ -20,7 +20,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/access"
+	"github.com/router-for-me/CLIProxyAPI/v6/internal/access/userkeys"
 	managementHandlers "github.com/router-for-me/CLIProxyAPI/v6/internal/api/handlers/management"
+	portalHandlers "github.com/router-for-me/CLIProxyAPI/v6/internal/api/handlers/portal"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/api/middleware"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/api/modules"
 	ampmodule "github.com/router-for-me/CLIProxyAPI/v6/internal/api/modules/amp"
@@ -28,6 +30,7 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/config"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/logging"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/managementasset"
+	"github.com/router-for-me/CLIProxyAPI/v6/internal/portal"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/usage"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/util"
 	sdkaccess "github.com/router-for-me/CLIProxyAPI/v6/sdk/access"
@@ -171,6 +174,8 @@ type Server struct {
 	envManagementSecret bool
 
 	localPassword string
+	userKeyStore  *userkeys.Store
+	portalStore   *portal.Store
 
 	keepAliveEnabled   bool
 	keepAliveTimeout   time.Duration
@@ -235,6 +240,16 @@ func NewServer(cfg *config.Config, authManager *auth.Manager, accessManager *sdk
 	if err != nil {
 		wd = configFilePath
 	}
+	userKeyStore, errUserKeyStore := userkeys.NewStore(userkeys.DefaultPath(configFilePath))
+	if errUserKeyStore != nil {
+		log.WithError(errUserKeyStore).Warn("failed to initialize user api key store")
+	} else {
+		sdkaccess.RegisterProvider(userkeys.ProviderType, userkeys.NewProvider(userKeyStore))
+	}
+	portalStore, errPortalStore := portal.NewStore(portal.DefaultPath(configFilePath))
+	if errPortalStore != nil {
+		log.WithError(errPortalStore).Warn("failed to initialize user portal store")
+	}
 
 	envAdminPassword, envAdminPasswordSet := os.LookupEnv("MANAGEMENT_PASSWORD")
 	envAdminPassword = strings.TrimSpace(envAdminPassword)
@@ -252,6 +267,8 @@ func NewServer(cfg *config.Config, authManager *auth.Manager, accessManager *sdk
 		currentPath:         wd,
 		envManagementSecret: envManagementSecret,
 		wsRoutes:            make(map[string]struct{}),
+		userKeyStore:        userKeyStore,
+		portalStore:         portalStore,
 	}
 	s.wsAuthEnabled.Store(cfg.WebsocketAuth)
 	// Save initial YAML snapshot
@@ -265,6 +282,7 @@ func NewServer(cfg *config.Config, authManager *auth.Manager, accessManager *sdk
 	applySignatureCacheConfig(nil, cfg)
 	// Initialize management handler
 	s.mgmt = managementHandlers.NewHandler(cfg, configFilePath, authManager)
+	s.mgmt.SetUserAPIKeyStore(userKeyStore)
 	if optionState.localPassword != "" {
 		s.mgmt.SetLocalPassword(optionState.localPassword)
 	}
@@ -383,6 +401,7 @@ func (s *Server) setupRoutes() {
 		})
 	})
 	s.engine.POST("/v1internal:method", geminiCLIHandlers.CLIHandler)
+	s.registerPortalRoutes()
 
 	// OAuth callback endpoints (reuse main server port)
 	// These endpoints receive provider redirects and persist
@@ -444,6 +463,33 @@ func (s *Server) setupRoutes() {
 	})
 
 	// Management routes are registered lazily by registerManagementRoutes when a secret is configured.
+}
+
+func (s *Server) registerPortalRoutes() {
+	if s == nil || s.engine == nil || s.portalStore == nil || s.userKeyStore == nil {
+		return
+	}
+	handler := portalHandlers.NewHandler(s.portalStore, s.userKeyStore, portal.NewResendMailerFromEnv())
+	portalGroup := s.engine.Group("/v0/portal")
+	{
+		portalGroup.POST("/auth-code", handler.RequestAuthCode)
+		portalGroup.POST("/register", handler.Register)
+		portalGroup.POST("/login", handler.Login)
+		portalGroup.GET("/plans", handler.Plans)
+	}
+	authenticated := portalGroup.Group("")
+	authenticated.Use(handler.AuthMiddleware())
+	{
+		authenticated.POST("/logout", handler.Logout)
+		authenticated.GET("/me", handler.Me)
+		authenticated.GET("/api-keys", handler.ListAPIKeys)
+		authenticated.POST("/api-keys", handler.CreateAPIKey)
+		authenticated.PATCH("/api-keys/:id", handler.PatchAPIKey)
+		authenticated.DELETE("/api-keys/:id", handler.DeleteAPIKey)
+		authenticated.GET("/orders", handler.ListOrders)
+		authenticated.POST("/orders", handler.CreateOrder)
+		authenticated.POST("/orders/:id/mock-pay", handler.MockPayOrder)
+	}
 }
 
 // AttachWebsocketRoute registers a websocket upgrade handler on the primary Gin engine.
@@ -543,6 +589,10 @@ func (s *Server) registerManagementRoutes() {
 		mgmt.PUT("/api-keys", s.mgmt.PutAPIKeys)
 		mgmt.PATCH("/api-keys", s.mgmt.PatchAPIKeys)
 		mgmt.DELETE("/api-keys", s.mgmt.DeleteAPIKeys)
+		mgmt.GET("/user-api-keys", s.mgmt.GetUserAPIKeys)
+		mgmt.POST("/user-api-keys", s.mgmt.CreateUserAPIKey)
+		mgmt.PATCH("/user-api-keys/:id", s.mgmt.PatchUserAPIKey)
+		mgmt.DELETE("/user-api-keys/:id", s.mgmt.DeleteUserAPIKey)
 
 		mgmt.GET("/gemini-api-key", s.mgmt.GetGeminiKeys)
 		mgmt.PUT("/gemini-api-key", s.mgmt.PutGeminiKeys)

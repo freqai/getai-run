@@ -657,6 +657,10 @@ func (m *Manager) availableAuthsForRouteModel(auths []*Auth, provider, routeMode
 	return available, nil
 }
 
+func authMatchesExecutionPoolGroup(auth *Auth, opts cliproxyexecutor.Options) bool {
+	return authMatchesPoolGroup(auth, requestedPoolGroup(opts.Metadata))
+}
+
 func selectionArgForSelector(selector Selector, routeModel string) string {
 	if isBuiltInSelector(selector) {
 		return ""
@@ -2651,6 +2655,9 @@ func (m *Manager) pickNextLegacy(ctx context.Context, provider, model string, op
 		if candidate.Provider != provider || candidate.Disabled {
 			continue
 		}
+		if !authMatchesExecutionPoolGroup(candidate, opts) {
+			continue
+		}
 		if pinnedAuthID != "" && candidate.ID != pinnedAuthID {
 			continue
 		}
@@ -2781,6 +2788,9 @@ func (m *Manager) pickNextMixedLegacy(ctx context.Context, providers []string, m
 			continue
 		}
 		if _, used := tried[candidate.ID]; used {
+			continue
+		}
+		if !authMatchesExecutionPoolGroup(candidate, opts) {
 			continue
 		}
 		if _, ok := m.executors[providerKey]; !ok {
