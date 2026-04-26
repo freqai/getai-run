@@ -36,6 +36,7 @@ type openAICompatibilityAPIKeyWithAuthIndex struct {
 type openAICompatibilityWithAuthIndex struct {
 	Name          string                                   `json:"name"`
 	Priority      int                                      `json:"priority,omitempty"`
+	Disabled      bool                                     `json:"disabled"`
 	Prefix        string                                   `json:"prefix,omitempty"`
 	Group         string                                   `json:"group,omitempty"`
 	BaseURL       string                                   `json:"base-url"`
@@ -216,6 +217,7 @@ func (h *Handler) openAICompatibilityWithAuthIndex() []openAICompatibilityWithAu
 		response := openAICompatibilityWithAuthIndex{
 			Name:      entry.Name,
 			Priority:  entry.Priority,
+			Disabled:  entry.Disabled,
 			Prefix:    entry.Prefix,
 			Group:     entry.Group,
 			BaseURL:   entry.BaseURL,

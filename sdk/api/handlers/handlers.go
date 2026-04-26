@@ -55,6 +55,7 @@ const (
 type pinnedAuthContextKey struct{}
 type selectedAuthCallbackContextKey struct{}
 type executionSessionContextKey struct{}
+type disallowFreeAuthContextKey struct{}
 
 // WithPinnedAuthID returns a child context that requests execution on a specific auth ID.
 func WithPinnedAuthID(ctx context.Context, authID string) context.Context {
@@ -89,6 +90,14 @@ func WithExecutionSessionID(ctx context.Context, sessionID string) context.Conte
 		ctx = context.Background()
 	}
 	return context.WithValue(ctx, executionSessionContextKey{}, sessionID)
+}
+
+// WithDisallowFreeAuth returns a child context that requests skipping known free-tier credentials.
+func WithDisallowFreeAuth(ctx context.Context) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, disallowFreeAuthContextKey{}, true)
 }
 
 // BuildErrorResponseBody builds an OpenAI-compatible JSON error response body.
@@ -224,6 +233,9 @@ func requestExecutionMetadata(ctx context.Context) map[string]any {
 	if executionSessionID := executionSessionIDFromContext(ctx); executionSessionID != "" {
 		meta[coreexecutor.ExecutionSessionMetadataKey] = executionSessionID
 	}
+	if disallowFreeAuthFromContext(ctx) {
+		meta[coreexecutor.DisallowFreeAuthMetadataKey] = true
+	}
 	return meta
 }
 
@@ -266,6 +278,14 @@ func executionSessionIDFromContext(ctx context.Context) string {
 	default:
 		return ""
 	}
+}
+
+func disallowFreeAuthFromContext(ctx context.Context) bool {
+	if ctx == nil {
+		return false
+	}
+	raw, ok := ctx.Value(disallowFreeAuthContextKey{}).(bool)
+	return ok && raw
 }
 
 // BaseAPIHandler contains the handlers for API endpoints.
