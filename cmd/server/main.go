@@ -235,6 +235,7 @@ func main() {
 
 	// Determine and load the configuration file.
 	// Prefer the Postgres store when configured, otherwise fallback to git or local files.
+	// When --config flag is specified, it takes precedence over database-stored config.
 	var configFilePath string
 	if usePostgresStore {
 		if pgStoreLocalPath == "" {
@@ -260,9 +261,25 @@ func main() {
 			return
 		}
 		cancel()
-		configFilePath = pgStoreInst.ConfigPath()
+
+		// Determine config file path:
+		// - If --config flag is specified, use that file (takes precedence)
+		// - Otherwise, use the config from database (pgStoreInst.ConfigPath())
+		if configPath != "" {
+			configFilePath = configPath
+			log.Infof("postgres-backed token store enabled, using config from --config: %s", configPath)
+		} else {
+			configFilePath = pgStoreInst.ConfigPath()
+			log.Infof("postgres-backed token store enabled, using config from database")
+		}
+
+		// Load config from the determined path
 		cfg, err = config.LoadConfigOptional(configFilePath, isCloudDeploy)
 		if err == nil {
+			if cfg == nil {
+				cfg = &config.Config{}
+			}
+			// Always use auth dir from postgres store, regardless of config source
 			cfg.AuthDir = pgStoreInst.AuthDir()
 			log.Infof("postgres-backed token store enabled, workspace path: %s", pgStoreInst.WorkDir())
 		}
@@ -417,6 +434,7 @@ func main() {
 			configFileExists = true
 		}
 	}
+	usage.InitPostgresUsagePlugin()
 	usage.SetStatisticsEnabled(cfg.UsageStatisticsEnabled)
 	coreauth.SetQuotaCooldownDisabled(cfg.DisableCooling)
 

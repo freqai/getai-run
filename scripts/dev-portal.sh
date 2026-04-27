@@ -19,7 +19,26 @@ if ! lsof -ti tcp:4173 >/dev/null 2>&1; then
   nohup python3 -m http.server 4173 --directory website >"$FRONTEND_LOG" 2>&1 &
 fi
 
-nohup go run ./cmd/server --config "$CONFIG_PATH" --no-browser >"$BACKEND_LOG" 2>&1 &
+export_env=""
+if [ -n "${PGSTORE_DSN:-}" ]; then
+  export_env="PGSTORE_DSN=$PGSTORE_DSN"
+fi
+if [ -n "${USAGE_PG_DSN:-}" ]; then
+  export_env="${export_env} USAGE_PG_DSN=$USAGE_PG_DSN"
+fi
+if [ -n "${PGSTORE_SCHEMA:-}" ]; then
+  export_env="${export_env} PGSTORE_SCHEMA=$PGSTORE_SCHEMA"
+fi
+if [ -n "${USAGE_PG_SCHEMA:-}" ]; then
+  export_env="${export_env} USAGE_PG_SCHEMA=$USAGE_PG_SCHEMA"
+fi
+
+if [ -n "$export_env" ]; then
+  echo "Using PostgreSQL environment variables: $export_env"
+  eval "nohup env $export_env go run ./cmd/server --config \"$CONFIG_PATH\" --no-browser >\"$BACKEND_LOG\" 2>&1 &"
+else
+  nohup go run ./cmd/server --config "$CONFIG_PATH" --no-browser >"$BACKEND_LOG" 2>&1 &
+fi
 
 echo "Frontend: http://127.0.0.1:4173/"
 echo "Backend:  http://127.0.0.1:8417/"
