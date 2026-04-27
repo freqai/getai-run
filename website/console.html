@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="getai.run 用户控制台 - 管理 API 密钥、查看用量和充值"
+    >
+    <title>getai.run | 用户控制台</title>
+    <link rel="icon" href="./brand-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./styles.css">
+    <style>
+      body.console-page {
+        min-height: 100vh;
+        overflow: hidden;
+      }
+      body.console-page .console-app {
+        min-height: 100vh;
+        border-top: none;
+      }
+      body.console-page .console-sidebar {
+        height: 100vh;
+        top: 0;
+        padding-top: 22px;
+      }
+      .console-notice {
+        background: rgba(59, 130, 246, 0.1);
+        border-left: 3px solid #3b82f6;
+        padding: 10px 14px;
+        margin-bottom: 16px;
+        border-radius: 4px;
+        font-size: 13px;
+        color: #1e40af;
+      }
+    </style>
+  </head>
+  <body class="console-page">
+    <div class="console-app" id="consoleApp">
+      <aside class="console-sidebar">
+        <a class="brand console-brand" href="/" aria-label="getai.run 首页">
+          <img class="brand-mark" src="./brand-icon.svg" alt="" aria-hidden="true">
+          <strong>getai.run</strong>
+        </a>
+        <nav class="console-nav" aria-label="控制台导航">
+          <button class="active" type="button" data-console-tab="overview">仪表盘</button>
+          <button type="button" data-console-tab="usage">使用记录</button>
+          <button type="button" data-console-tab="keys">API 密钥</button>
+          <button type="button" data-console-tab="billing">充值下单</button>
+          <button type="button" data-console-tab="orders">我的订单</button>
+          <button type="button" data-console-tab="docs">文档</button>
+        </nav>
+      </aside>
+
+      <section class="console-main">
+        <header class="console-topbar">
+          <div>
+            <p class="eyebrow">User Console</p>
+            <h1 id="consoleTitle">仪表盘</h1>
+          </div>
+          <div class="console-user">
+            <span class="balance-pill" id="balancePill">$0.00</span>
+            <span class="user-pill" id="userPill">User</span>
+            <button class="button button-secondary compact" type="button" id="logoutButton">退出</button>
+          </div>
+        </header>
+
+        <section class="console-panel active" id="panel-overview">
+          <div class="metric-grid">
+            <article class="metric-card">
+              <span>可用余额</span>
+              <strong id="overviewBalance">$0.00</strong>
+            </article>
+            <article class="metric-card">
+              <span>API 密钥</span>
+              <strong id="overviewKeyCount">0</strong>
+            </article>
+            <article class="metric-card">
+              <span>最近订单</span>
+              <strong id="overviewOrderCount">0</strong>
+            </article>
+          </div>
+          <div class="console-card">
+            <div class="console-card-head">
+              <div>
+                <h2>快速开始</h2>
+                <p>创建 API Key 后，将客户端 base_url 指向当前服务地址即可调用。</p>
+              </div>
+              <button class="button button-primary" type="button" data-console-tab="keys">创建密钥</button>
+            </div>
+            <pre class="console-code"><code>curl --request GET \
+  --url http://127.0.0.1:8417/v1/models \
+  --header 'Authorization: Bearer &lt;你的 API Key&gt;'</code></pre>
+          </div>
+        </section>
+
+        <section class="console-panel" id="panel-usage">
+          <div class="console-toolbar">
+            <div>
+              <h2>使用记录</h2>
+              <p>查看 API 调用历史记录（仅 PostgreSQL 后端可用）。</p>
+            </div>
+            <button class="icon-button" type="button" id="refreshUsage" aria-label="刷新">↻</button>
+          </div>
+          <div class="data-table usage-table" id="usageTable"></div>
+        </section>
+
+        <section class="console-panel" id="panel-keys">
+          <div class="console-toolbar">
+            <div class="search-box">搜索名称或 Key...</div>
+            <button class="icon-button" type="button" id="refreshKeys" aria-label="刷新">↻</button>
+            <button class="button button-primary" type="button" id="createKeyButton">创建密钥</button>
+          </div>
+          <div class="data-table" id="keysTable"></div>
+        </section>
+
+        <section class="console-panel" id="panel-billing">
+          <div class="console-card">
+            <div class="console-card-head">
+              <div>
+                <h2>充值下单</h2>
+                <p>当前接入的是本地订单接口，生产支付可替换为支付平台回调。</p>
+              </div>
+            </div>
+            <div class="plan-grid" id="planGrid"></div>
+          </div>
+        </section>
+
+        <section class="console-panel" id="panel-orders">
+          <div class="console-toolbar">
+            <div>
+              <h2>我的订单</h2>
+              <p>查看充值订单状态。</p>
+            </div>
+            <button class="icon-button" type="button" id="refreshOrders" aria-label="刷新">↻</button>
+          </div>
+          <div class="data-table" id="ordersTable"></div>
+        </section>
+
+        <section class="console-panel" id="panel-docs">
+          <div class="console-card">
+            <h2>文档</h2>
+            <p>API 兼容 OpenAI、Gemini、Claude 与 Codex 常见客户端。更多接入说明请查看文档页。</p>
+            <a class="button button-primary" href="/docs/">打开文档</a>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <dialog class="auth-dialog" id="keyDialog">
+      <form class="auth-card" id="keyForm">
+        <button class="dialog-close" type="button" id="closeKeyDialog" aria-label="关闭">×</button>
+        <p class="eyebrow">API Key</p>
+        <h2>创建密钥</h2>
+        <label>
+          名称
+          <input id="keyName" name="name" required placeholder="我的 API 密钥">
+        </label>
+        <label>
+          分组
+          <select id="keyGroup" name="group">
+            <option value="">默认号池</option>
+            <option value="claude">claude</option>
+            <option value="codex">codex</option>
+            <option value="gemini">gemini</option>
+          </select>
+        </label>
+        <p class="form-error" id="keyError"></p>
+        <button class="button button-primary" type="submit">创建</button>
+        <div class="new-key-box hidden" id="newKeyBox">
+          <span>请立即复制保存，之后不会再次显示。</span>
+          <code id="newKeyValue"></code>
+          <button class="button button-secondary compact" type="button" id="copyNewKey">复制</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="./console.js?v=2026042701"></script>
+  </body>
+</html>

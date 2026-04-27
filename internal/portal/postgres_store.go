@@ -195,6 +195,80 @@ func (s *PostgresStore) Login(email, password string) (PublicUser, string, error
 	return publicUser(&user), token, nil
 }
 
+// ResetPassword verifies the email code and resets the user's password.
+func (s *PostgresStore) ResetPassword(email, code, newPassword string) (PublicUser, string, error) {
+	email = normalizeEmail(email)
+	code = strings.TrimSpace(code)
+	if email == "" {
+		return PublicUser{}, "", fmt.Errorf("email is required")
+	}
+	if code == "" {
+		return PublicUser{}, "", fmt.Errorf("verification code is required")
+	}
+	if len(newPassword) < 8 {
+		return PublicUser{}, "", fmt.Errorf("password must be at least 8 characters")
+	}
+	now := time.Now().UTC()
+	ctx := context.Background()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return PublicUser{}, "", fmt.Errorf("begin reset password tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	res, err := tx.ExecContext(ctx, fmt.Sprintf(`
+		UPDATE %s
+		SET used_at = NOW()
+		WHERE id = (
+			SELECT id FROM %s
+			WHERE email = $1 AND purpose = $2 AND code_hash = $3 AND used_at IS NULL AND expires_at > NOW()
+			ORDER BY created_at DESC
+			LIMIT 1
+		)
+	`, s.table("portal_email_codes"), s.table("portal_email_codes")), email, "reset-password", hashToken(email+":reset-password:"+code))
+	if err != nil {
+		return PublicUser{}, "", fmt.Errorf("verify email code: %w", err)
+	}
+	affected, _ := res.RowsAffected()
+	if affected == 0 {
+		return PublicUser{}, "", os.ErrPermission
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return PublicUser{}, "", fmt.Errorf("hash password: %w", err)
+	}
+
+	var user User
+	if err := tx.QueryRowContext(ctx, fmt.Sprintf(`
+		UPDATE %s
+		SET password_hash = $1, updated_at = $2
+		WHERE email = $3
+		RETURNING id, email, name, balance_cents, created_at, updated_at
+	`, s.table("portal_users")), string(passwordHash), now, email).Scan(&user.ID, &user.Email, &user.Name, &user.BalanceCents, &user.CreatedAt, &user.UpdatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return PublicUser{}, "", os.ErrNotExist
+		}
+		return PublicUser{}, "", fmt.Errorf("update password: %w", err)
+	}
+
+	token, tokenHash, err := newToken()
+	if err != nil {
+		return PublicUser{}, "", err
+	}
+	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`
+		INSERT INTO %s (token_hash, user_id, created_at, expires_at)
+		VALUES ($1, $2, $3, $4)
+	`, s.table("portal_sessions")), tokenHash, user.ID, now, now.Add(sessionTTL)); err != nil {
+		return PublicUser{}, "", fmt.Errorf("insert session: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return PublicUser{}, "", fmt.Errorf("commit reset password tx: %w", err)
+	}
+	return publicUser(&user), token, nil
+}
+
 // Logout removes a session token.
 func (s *PostgresStore) Logout(token string) error {
 	hash := hashToken(token)

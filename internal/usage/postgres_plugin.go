@@ -267,3 +267,169 @@ func generateUsageID() string {
 		now.Format("20060102-150405"),
 		now.Nanosecond())
 }
+
+type UsageLog struct {
+	ID              string    `json:"id"`
+	APIKey          string    `json:"api_key,omitempty"`
+	APIKeyPrefix    string    `json:"api_key_prefix,omitempty"`
+	Model           string    `json:"model"`
+	Provider        string    `json:"provider"`
+	AuthID          string    `json:"auth_id,omitempty"`
+	AuthIndex       string    `json:"auth_index,omitempty"`
+	AuthType        string    `json:"auth_type,omitempty"`
+	Source          string    `json:"source,omitempty"`
+	RequestedAt     time.Time `json:"requested_at"`
+	LatencyMs       int64     `json:"latency_ms"`
+	Failed          bool      `json:"failed"`
+	InputTokens     int64     `json:"input_tokens"`
+	OutputTokens    int64     `json:"output_tokens"`
+	ReasoningTokens int64     `json:"reasoning_tokens"`
+	CachedTokens    int64     `json:"cached_tokens"`
+	TotalTokens     int64     `json:"total_tokens"`
+	CreatedAt       time.Time `json:"created_at,omitempty"`
+}
+
+func (p *PostgresUsagePlugin) ListUsageLogsByKeyPrefixes(ctx context.Context, keyPrefixes []string, limit int) ([]UsageLog, error) {
+	if p == nil || p.db == nil {
+		return nil, fmt.Errorf("postgres usage plugin not initialized")
+	}
+	if len(keyPrefixes) == 0 {
+		return []UsageLog{}, nil
+	}
+	limit = clampLimit(limit)
+
+	query := fmt.Sprintf(`
+		SELECT id, api_key, model, provider, auth_id, auth_index, auth_type, source, requested_at, latency_ms, failed, input_tokens, output_tokens, reasoning_tokens, cached_tokens, total_tokens, created_at
+		FROM %s
+		WHERE
+	`, p.table("api_usage_logs"))
+
+	conditions := make([]string, 0, len(keyPrefixes))
+	args := make([]any, 0, len(keyPrefixes)+1)
+	for i, prefix := range keyPrefixes {
+		prefix = strings.TrimSpace(prefix)
+		if prefix == "" {
+			continue
+		}
+		conditions = append(conditions, fmt.Sprintf("api_key LIKE $%d || '%%'", i+1))
+		args = append(args, prefix)
+	}
+	if len(conditions) == 0 {
+		return []UsageLog{}, nil
+	}
+	query += " " + strings.Join(conditions, " OR ")
+	query += fmt.Sprintf(" ORDER BY requested_at DESC LIMIT $%d", len(args)+1)
+	args = append(args, limit)
+
+	rows, err := p.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query usage logs: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var logs []UsageLog
+	for rows.Next() {
+		log, scanErr := scanUsageLogRow(rows)
+		if scanErr != nil {
+			return logs, nil
+		}
+		logs = append(logs, log)
+	}
+	return logs, nil
+}
+
+func (p *PostgresUsagePlugin) ListUsageLogsAll(ctx context.Context, limit int) ([]UsageLog, error) {
+	if p == nil || p.db == nil {
+		return nil, fmt.Errorf("postgres usage plugin not initialized")
+	}
+	limit = clampLimit(limit)
+
+	query := fmt.Sprintf(`
+		SELECT id, api_key, model, provider, auth_id, auth_index, auth_type, source, requested_at, latency_ms, failed, input_tokens, output_tokens, reasoning_tokens, cached_tokens, total_tokens, created_at
+		FROM %s
+		ORDER BY requested_at DESC
+		LIMIT $1
+	`, p.table("api_usage_logs"))
+
+	rows, err := p.db.QueryContext(ctx, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("query all usage logs: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var logs []UsageLog
+	for rows.Next() {
+		log, scanErr := scanUsageLogRow(rows)
+		if scanErr != nil {
+			return logs, nil
+		}
+		logs = append(logs, log)
+	}
+	return logs, nil
+}
+
+func scanUsageLogRow(rows *sql.Rows) (UsageLog, error) {
+	var log UsageLog
+	var apiKey sql.NullString
+	var authID, authIndex, authType, source sql.NullString
+	var createdAt sql.NullTime
+	if err := rows.Scan(
+		&log.ID,
+		&apiKey,
+		&log.Model,
+		&log.Provider,
+		&authID,
+		&authIndex,
+		&authType,
+		&source,
+		&log.RequestedAt,
+		&log.LatencyMs,
+		&log.Failed,
+		&log.InputTokens,
+		&log.OutputTokens,
+		&log.ReasoningTokens,
+		&log.CachedTokens,
+		&log.TotalTokens,
+		&createdAt,
+	); err != nil {
+		return log, err
+	}
+	if apiKey.Valid {
+		log.APIKey = apiKey.String
+		log.APIKeyPrefix = prefixForDisplay(apiKey.String)
+	}
+	if authID.Valid {
+		log.AuthID = authID.String
+	}
+	if authIndex.Valid {
+		log.AuthIndex = authIndex.String
+	}
+	if authType.Valid {
+		log.AuthType = authType.String
+	}
+	if source.Valid {
+		log.Source = source.String
+	}
+	if createdAt.Valid {
+		log.CreatedAt = createdAt.Time
+	}
+	return log, nil
+}
+
+func clampLimit(limit int) int {
+	if limit <= 0 {
+		return 50
+	}
+	if limit > 500 {
+		return 500
+	}
+	return limit
+}
+
+func prefixForDisplay(key string) string {
+	key = strings.TrimSpace(key)
+	if len(key) <= 14 {
+		return key
+	}
+	return key[:14]
+}

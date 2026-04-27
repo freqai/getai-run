@@ -480,6 +480,7 @@ func (s *Server) registerPortalRoutes() {
 		portalGroup.POST("/auth-code", handler.RequestAuthCode)
 		portalGroup.POST("/register", handler.Register)
 		portalGroup.POST("/login", handler.Login)
+		portalGroup.POST("/reset-password", handler.ResetPassword)
 		portalGroup.GET("/plans", handler.Plans)
 	}
 	authenticated := portalGroup.Group("")
@@ -491,6 +492,7 @@ func (s *Server) registerPortalRoutes() {
 		authenticated.POST("/api-keys", handler.CreateAPIKey)
 		authenticated.PATCH("/api-keys/:id", handler.PatchAPIKey)
 		authenticated.DELETE("/api-keys/:id", handler.DeleteAPIKey)
+		authenticated.GET("/usage-logs", handler.ListUsageLogs)
 		authenticated.GET("/orders", handler.ListOrders)
 		authenticated.POST("/orders", handler.CreateOrder)
 		authenticated.POST("/orders/:id/mock-pay", handler.MockPayOrder)

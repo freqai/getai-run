@@ -257,105 +257,6 @@
         </section>
       </main>
 
-      <main class="console-app hidden" id="consoleApp">
-        <aside class="console-sidebar">
-          <a class="brand console-brand" href="/" aria-label="getai.run 首页">
-            <img class="brand-mark" src="./brand-icon.svg" alt="" aria-hidden="true">
-            <strong>getai.run</strong>
-          </a>
-          <nav class="console-nav" aria-label="控制台导航">
-            <button class="active" type="button" data-console-tab="overview">仪表盘</button>
-            <button type="button" data-console-tab="keys">API 密钥</button>
-            <button type="button" data-console-tab="billing">充值下单</button>
-            <button type="button" data-console-tab="orders">我的订单</button>
-            <button type="button" data-console-tab="docs">文档</button>
-          </nav>
-        </aside>
-
-        <section class="console-main">
-          <header class="console-topbar">
-            <div>
-              <p class="eyebrow">User Console</p>
-              <h1 id="consoleTitle">仪表盘</h1>
-            </div>
-            <div class="console-user">
-              <span class="balance-pill" id="balancePill">$0.00</span>
-              <span class="user-pill" id="userPill">User</span>
-              <button class="button button-secondary compact" type="button" id="logoutButton">退出</button>
-            </div>
-          </header>
-
-          <section class="console-panel active" id="panel-overview">
-            <div class="metric-grid">
-              <article class="metric-card">
-                <span>可用余额</span>
-                <strong id="overviewBalance">$0.00</strong>
-              </article>
-              <article class="metric-card">
-                <span>API 密钥</span>
-                <strong id="overviewKeyCount">0</strong>
-              </article>
-              <article class="metric-card">
-                <span>最近订单</span>
-                <strong id="overviewOrderCount">0</strong>
-              </article>
-            </div>
-            <div class="console-card">
-              <div class="console-card-head">
-                <div>
-                  <h2>快速开始</h2>
-                  <p>创建 API Key 后，将客户端 base_url 指向当前服务地址即可调用。</p>
-                </div>
-                <button class="button button-primary" type="button" data-console-tab="keys">创建密钥</button>
-              </div>
-              <pre class="console-code"><code>curl --request GET \
-  --url http://127.0.0.1:8417/v1/models \
-  --header 'Authorization: Bearer &lt;你的 API Key&gt;'</code></pre>
-            </div>
-          </section>
-
-          <section class="console-panel" id="panel-keys">
-            <div class="console-toolbar">
-              <div class="search-box">搜索名称或 Key...</div>
-              <button class="icon-button" type="button" id="refreshKeys" aria-label="刷新">↻</button>
-              <button class="button button-primary" type="button" id="createKeyButton">创建密钥</button>
-            </div>
-            <div class="data-table" id="keysTable"></div>
-          </section>
-
-          <section class="console-panel" id="panel-billing">
-            <div class="console-card">
-              <div class="console-card-head">
-                <div>
-                  <h2>充值下单</h2>
-                  <p>当前接入的是本地订单接口，生产支付可替换为支付平台回调。</p>
-                </div>
-              </div>
-              <div class="plan-grid" id="planGrid"></div>
-            </div>
-          </section>
-
-          <section class="console-panel" id="panel-orders">
-            <div class="console-toolbar">
-              <div>
-                <h2>我的订单</h2>
-                <p>查看充值订单状态。</p>
-              </div>
-              <button class="icon-button" type="button" id="refreshOrders" aria-label="刷新">↻</button>
-            </div>
-            <div class="data-table" id="ordersTable"></div>
-          </section>
-
-          <section class="console-panel" id="panel-docs">
-            <div class="console-card">
-              <h2>文档</h2>
-              <p>API 兼容 OpenAI、Gemini、Claude 与 Codex 常见客户端。更多接入说明请查看文档页。</p>
-              <a class="button button-primary" href="/docs/">打开文档</a>
-            </div>
-          </section>
-        </section>
-      </main>
-
       <dialog class="auth-dialog" id="authDialog">
         <form class="auth-card" id="authForm">
           <button class="dialog-close" type="button" id="closeAuth" aria-label="关闭">×</button>
@@ -380,36 +281,15 @@
             密码
             <input id="authPassword" name="password" type="password" autocomplete="current-password" required placeholder="至少 8 位">
           </label>
+          <label id="confirmPasswordField">
+            确认新密码
+            <input id="authConfirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required placeholder="再次输入新密码">
+          </label>
           <p class="form-error" id="authError"></p>
           <button class="button button-primary" type="submit" id="authSubmit">登录</button>
-          <button class="text-button" type="button" id="switchAuthMode">没有账号？立即注册</button>
-        </form>
-      </dialog>
-
-      <dialog class="auth-dialog" id="keyDialog">
-        <form class="auth-card" id="keyForm">
-          <button class="dialog-close" type="button" id="closeKeyDialog" aria-label="关闭">×</button>
-          <p class="eyebrow">API Key</p>
-          <h2>创建密钥</h2>
-          <label>
-            名称
-            <input id="keyName" name="name" required placeholder="我的 API 密钥">
-          </label>
-          <label>
-            分组
-            <select id="keyGroup" name="group">
-              <option value="">默认号池</option>
-              <option value="claude">claude</option>
-              <option value="codex">codex</option>
-              <option value="gemini">gemini</option>
-            </select>
-          </label>
-          <p class="form-error" id="keyError"></p>
-          <button class="button button-primary" type="submit">创建</button>
-          <div class="new-key-box hidden" id="newKeyBox">
-            <span>请立即复制保存，之后不会再次显示。</span>
-            <code id="newKeyValue"></code>
-            <button class="button button-secondary compact" type="button" id="copyNewKey">复制</button>
+          <div class="auth-links">
+            <button class="text-button" type="button" id="forgotPassword">忘记密码？</button>
+            <button class="text-button" type="button" id="switchAuthMode">没有账号？立即注册</button>
           </div>
         </form>
       </dialog>
@@ -419,6 +299,6 @@
         <span>中文 AI 中转服务</span>
       </footer>
     </div>
-    <script src="./app.js?v=2026042601"></script>
+    <script src="./app.js?v=2026042701"></script>
   </body>
 </html>

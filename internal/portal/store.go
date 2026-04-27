@@ -28,6 +28,7 @@ type DataStore interface {
 	Login(email, password string) (PublicUser, string, error)
 	Logout(token string) error
 	UserForToken(token string) (PublicUser, bool)
+	ResetPassword(email, code, newPassword string) (PublicUser, string, error)
 	CreateOrder(userID, planID string) (PublicOrder, error)
 	ListOrders(userID string) []PublicOrder
 	MarkOrderPaid(userID, orderID string) (PublicOrder, PublicUser, error)
@@ -319,6 +320,71 @@ func (s *Store) Logout(token string) error {
 	return s.saveLocked()
 }
 
+// ResetPassword verifies the email code and resets the user's password.
+func (s *Store) ResetPassword(email, code, newPassword string) (PublicUser, string, error) {
+	if s == nil {
+		return PublicUser{}, "", fmt.Errorf("portal store is nil")
+	}
+	email = normalizeEmail(email)
+	code = strings.TrimSpace(code)
+	if email == "" {
+		return PublicUser{}, "", fmt.Errorf("email is required")
+	}
+	if code == "" {
+		return PublicUser{}, "", fmt.Errorf("verification code is required")
+	}
+	if len(newPassword) < 8 {
+		return PublicUser{}, "", fmt.Errorf("password must be at least 8 characters")
+	}
+	now := time.Now().UTC()
+	expectedHash := hashToken(email + ":" + "reset-password" + ":" + code)
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return PublicUser{}, "", fmt.Errorf("hash password: %w", err)
+	}
+	token, tokenHash, err := newToken()
+	if err != nil {
+		return PublicUser{}, "", err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var validCode *EmailCode
+	for _, record := range s.codes {
+		if record == nil || record.Email != email || record.Purpose != "reset-password" || !record.UsedAt.IsZero() {
+			continue
+		}
+		if now.After(record.ExpiresAt) {
+			continue
+		}
+		if record.CodeHash != expectedHash {
+			continue
+		}
+		validCode = record
+		break
+	}
+	if validCode == nil {
+		return PublicUser{}, "", os.ErrPermission
+	}
+
+	user := s.findUserByEmailLocked(email)
+	if user == nil {
+		return PublicUser{}, "", os.ErrNotExist
+	}
+
+	validCode.UsedAt = now
+	user.PasswordHash = string(passwordHash)
+	user.UpdatedAt = now
+	s.sessions[tokenHash] = &Session{TokenHash: tokenHash, UserID: user.ID, CreatedAt: now, ExpiresAt: now.Add(sessionTTL)}
+
+	if err := s.saveLocked(); err != nil {
+		return PublicUser{}, "", err
+	}
+
+	return publicUser(user), token, nil
+}
+
 // UserForToken resolves a bearer token to a user.
 func (s *Store) UserForToken(token string) (PublicUser, bool) {
 	if s == nil {
@@ -567,7 +633,7 @@ func normalizeEmail(email string) string {
 func normalizePurpose(purpose string) string {
 	purpose = strings.ToLower(strings.TrimSpace(purpose))
 	switch purpose {
-	case "register", "login":
+	case "register", "login", "reset-password":
 		return purpose
 	default:
 		return ""

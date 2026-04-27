@@ -1,15 +1,19 @@
 package portal
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/access/userkeys"
 	portalstore "github.com/router-for-me/CLIProxyAPI/v6/internal/portal"
+	"github.com/router-for-me/CLIProxyAPI/v6/internal/usage"
 )
 
 const userContextKey = "portal_user"
@@ -113,6 +117,31 @@ func (h *Handler) Login(c *gin.Context) {
 	user, token, err := h.store.Login(req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"user": user, "token": token})
+}
+
+// ResetPassword resets the user's password using an email verification code.
+func (h *Handler) ResetPassword(c *gin.Context) {
+	var req struct {
+		Email       string `json:"email"`
+		Code        string `json:"code"`
+		NewPassword string `json:"new_password"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	user, token, err := h.store.ResetPassword(req.Email, req.Code, req.NewPassword)
+	if err != nil {
+		status := http.StatusBadRequest
+		if strings.Contains(err.Error(), "at least 8 characters") {
+			status = http.StatusBadRequest
+		} else if strings.Contains(err.Error(), "verification code") {
+			status = http.StatusUnauthorized
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"user": user, "token": token})
@@ -239,6 +268,74 @@ func (h *Handler) MockPayOrder(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"order": order, "user": updatedUser})
+}
+
+// ListUsageLogs returns API usage logs.
+// By default, it shows ALL usage records (for development/debugging).
+// Query parameters:
+//   - limit: number of records to return (default 50, max 500)
+//   - filter: "user" to filter by user's API keys, "all" to show all (default)
+func (h *Handler) ListUsageLogs(c *gin.Context) {
+	user := currentUser(c)
+	plugin := usage.GlobalPostgresUsagePlugin()
+	if plugin == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"usage_logs":    []usage.UsageLog{},
+			"notice":        "PostgreSQL usage plugin not enabled. Set USAGE_PG_DSN or PGSTORE_DSN environment variable.",
+			"plugin_status": "disabled",
+		})
+		return
+	}
+
+	apiKeys := h.userKeyStore.ListByOwner(user.ID)
+	filterMode := strings.ToLower(strings.TrimSpace(c.Query("filter")))
+
+	var logs []usage.UsageLog
+	var err error
+	var notice string
+	var filterStatus string
+
+	limit := 50
+	if limitStr := strings.TrimSpace(c.Query("limit")); limitStr != "" {
+		if parsed, err := strconv.Atoi(limitStr); err == nil {
+			limit = parsed
+		}
+	}
+
+	keyPrefixes := make([]string, 0, len(apiKeys))
+	for _, key := range apiKeys {
+		if key.KeyPrefix != "" {
+			keyPrefixes = append(keyPrefixes, key.KeyPrefix)
+		}
+	}
+
+	if filterMode == "user" && len(keyPrefixes) > 0 {
+		logs, err = plugin.ListUsageLogsByKeyPrefixes(context.Background(), keyPrefixes, limit)
+		notice = fmt.Sprintf("Filtered by %d user API key prefix(es). Use ?filter=all or no filter to see all records.", len(keyPrefixes))
+		filterStatus = "filtered_by_user"
+	} else {
+		logs, err = plugin.ListUsageLogsAll(context.Background(), limit)
+		if len(keyPrefixes) > 0 {
+			notice = fmt.Sprintf("Showing all %d usage records. Use ?filter=user to filter by your %d API key(s).", len(logs), len(keyPrefixes))
+		} else {
+			notice = "Showing all usage records. Create an API key and use ?filter=user to filter by your own keys."
+		}
+		filterStatus = "all"
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"usage_logs":    logs,
+		"notice":        notice,
+		"plugin_status": "enabled",
+		"filter_status": filterStatus,
+		"api_key_count": len(apiKeys),
+		"key_prefixes":  keyPrefixes,
+	})
 }
 
 func currentUser(c *gin.Context) portalstore.PublicUser {
