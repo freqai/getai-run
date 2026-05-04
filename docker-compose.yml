@@ -1,57 +1,65 @@
-services:
-  postgres:
-    image: postgres:${POSTGRES_IMAGE_TAG:-16-alpine}
-    container_name: getai-postgres
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-getai_run}
-      POSTGRES_USER: ${POSTGRES_USER:-getai}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-getai} -d ${POSTGRES_DB:-getai_run}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
+# New-API Docker Compose Configuration for getai.run
+# Auto-deployed via GitHub Actions
+#
+# Quick Start:
+#   1. docker compose up -d
+#   2. Access at http://localhost:3000
 
-  cli-proxy-api:
-    image: ${CLI_PROXY_IMAGE:-eceasy/cli-proxy-api:latest}
-    pull_policy: always
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        VERSION: ${VERSION:-dev}
-        COMMIT: ${COMMIT:-none}
-        BUILD_DATE: ${BUILD_DATE:-unknown}
-    container_name: cli-proxy-api
-    env_file:
-      - .env
-    environment:
-      DEPLOY: ${DEPLOY:-}
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
-      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
-      PORTAL_DATABASE_URL: postgresql://${POSTGRES_USER:-getai}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-getai_run}?sslmode=disable
-      PORTAL_DB_SCHEMA: ${PORTAL_DB_SCHEMA:-public}
-      PGSTORE_DSN: ${PGSTORE_DSN:-}
-      PGSTORE_SCHEMA: ${PGSTORE_SCHEMA:-}
-      PGSTORE_LOCAL_PATH: ${PGSTORE_LOCAL_PATH:-}
-    depends_on:
-      postgres:
-        condition: service_healthy
+services:
+  new-api:
+    image: calciumion/new-api:latest
+    container_name: new-api
+    restart: always
+    command: --log-dir /app/logs
     ports:
-      - "8317:8317"
-      - "8085:8085"
-      - "1455:1455"
-      - "54545:54545"
-      - "51121:51121"
-      - "11451:11451"
+      - "3000:3000"
     volumes:
-      - ${CLI_PROXY_CONFIG_PATH:-./config.yaml}:/CLIProxyAPI/config.yaml
-      - ${CLI_PROXY_AUTH_PATH:-./auths}:/root/.cli-proxy-api
-      - ${CLI_PROXY_LOG_PATH:-./logs}:/CLIProxyAPI/logs
-    restart: unless-stopped
+      - ./data:/data
+      - ./logs:/app/logs
+    environment:
+      - SQL_DSN=${SQL_DSN}
+      - REDIS_CONN_STRING=${REDIS_CONN_STRING}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - TZ=${TZ:-Asia/Shanghai}
+      - ERROR_LOG_ENABLED=true
+      - BATCH_UPDATE_ENABLED=true
+      - NODE_NAME=getai-run
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-}
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - new-api-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -o '\"success\":\\s*true' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    networks:
+      - new-api-network
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-newapi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-new-api}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - new-api-network
 
 volumes:
-  postgres-data:
+  pg_data:
+
+networks:
+  new-api-network:
+    driver: bridge

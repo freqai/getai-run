@@ -31,47 +31,40 @@ jobs:
 
             cd $REPO_DIR
 
-            echo ">>> Preparing runtime files..."
-            if test -d config.yaml
-              rm -rf config.yaml
+            echo ">>> Stopping old services..."
+            set OLD_COMPOSE /root/getai-run/docker-compose.yml
+            if test -f $OLD_COMPOSE
+              cd /root/getai-run
+              docker compose down --volumes 2>/dev/null || true
             end
-            if not test -f config.yaml
-              cp config.example.yaml config.yaml
-            end
-            mkdir -p logs auths
+            cd $REPO_DIR
 
+            echo ">>> Setting up .env..."
             if not test -f .env
-              echo ">>> Bootstrapping .env from .env.example..."
-              cp .env.example .env
-            end
-
-            if not grep -q '^POSTGRES_PASSWORD=' .env
               set DB_PASS (openssl rand -hex 24)
-              printf '\nPOSTGRES_PASSWORD=%s\n' $DB_PASS >> .env
-            end
-            if not grep -q '^POSTGRES_USER=' .env
-              printf 'POSTGRES_USER=getai\n' >> .env
-            end
-            if not grep -q '^POSTGRES_DB=' .env
-              printf 'POSTGRES_DB=getai_run\n' >> .env
-            end
-            if not grep -q '^PORTAL_DB_SCHEMA=' .env
-              printf 'PORTAL_DB_SCHEMA=public\n' >> .env
+              set REDIS_PASS (openssl rand -hex 16)
+              set SESSION_SEC (openssl rand -hex 32)
+
+              printf 'POSTGRES_USER=newapi\n' >> .env
+              printf 'POSTGRES_PASSWORD=%s\n' $DB_PASS >> .env
+              printf 'POSTGRES_DB=new-api\n' >> .env
+              printf 'SQL_DSN=postgresql://newapi:%s@postgres:5432/new-api?sslmode=disable\n' $DB_PASS >> .env
+              printf 'REDIS_PASSWORD=%s\n' $REDIS_PASS >> .env
+              printf 'REDIS_CONN_STRING=redis://:%s@redis:6379\n' $REDIS_PASS >> .env
+              printf 'SESSION_SECRET=%s\n' $SESSION_SEC >> .env
+              printf 'TZ=Asia/Shanghai\n' >> .env
+            else
+              echo ">>> .env already exists, preserving..."
             end
 
-            echo ">>> Updating website files..."
-            mkdir -p /var/www/getai.run
-            if test -d website
-              cp -R website/. /var/www/getai.run/
-            end
+            echo ">>> Setting up data directories..."
+            mkdir -p data logs
 
-            echo ">>> Building and starting containers..."
-            docker compose up -d --build
+            echo ">>> Starting containers..."
+            docker compose up -d
 
             echo ">>> Pruning old images..."
             docker image prune -f
 
             echo ">>> Deployment complete"
             docker compose ps
-            echo ">>> Website files:"
-            ls -la /var/www/getai.run
