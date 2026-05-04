@@ -21,11 +21,9 @@ jobs:
             set REPO_URL https://github.com/freqai/getai-run.git
 
             echo ">>> Stopping old services (before pull)..."
-            # Stop old containers first, while old docker-compose.yml still exists
             if test -d $REPO_DIR
               cd $REPO_DIR
               docker compose down --volumes --remove-orphans 2>/dev/null || true
-              # Also kill any leftover containers from previous project
               docker rm -f cli-proxy-api getai-postgres 2>/dev/null || true
             end
 
@@ -42,21 +40,19 @@ jobs:
             cd $REPO_DIR
 
             echo ">>> Setting up .env..."
-            # Force regenerate .env if required vars are missing
-            if not test -f .env
-              touch .env
-            end
-
-            # Check if all required vars exist, if not generate them
             set NEEDS_GEN 0
-            if not grep -q '^SQL_DSN=' .env
+            if not test -f .env
               set NEEDS_GEN 1
-            end
-            if not grep -q '^REDIS_CONN_STRING=' .env
-              set NEEDS_GEN 1
-            end
-            if not grep -q '^SESSION_SECRET=' .env
-              set NEEDS_GEN 1
+            else
+              if not grep -q '^SQL_DSN=' .env
+                set NEEDS_GEN 1
+              end
+              if not grep -q '^REDIS_CONN_STRING=' .env
+                set NEEDS_GEN 1
+              end
+              if not grep -q '^SESSION_SECRET=' .env
+                set NEEDS_GEN 1
+              end
             end
 
             if test $NEEDS_GEN -eq 1
@@ -65,20 +61,16 @@ jobs:
               set REDIS_PASS (openssl rand -hex 16)
               set SESSION_SEC (openssl rand -hex 32)
 
-              # Back up existing .env
               cp .env .env.bak 2>/dev/null || true
-
-              cat > .env << ENVEOF
-            POSTGRES_USER=newapi
-            POSTGRES_PASSWORD=$DB_PASS
-            POSTGRES_DB=new-api
-            SQL_DSN=postgresql://newapi:$DB_PASS@postgres:5432/new-api?sslmode=disable
-            REDIS_PASSWORD=$REDIS_PASS
-            REDIS_CONN_STRING=redis://:$REDIS_PASS@redis:6379
-            SESSION_SECRET=$SESSION_SEC
-            TZ=Asia/Shanghai
-            ENVEOF
-              echo ">>> .env generated with random credentials"
+              printf 'POSTGRES_USER=newapi\n' > .env
+              printf 'POSTGRES_PASSWORD=%s\n' $DB_PASS >> .env
+              printf 'POSTGRES_DB=new-api\n' >> .env
+              printf 'SQL_DSN=postgresql://newapi:%s@postgres:5432/new-api?sslmode=disable\n' $DB_PASS >> .env
+              printf 'REDIS_PASSWORD=%s\n' $REDIS_PASS >> .env
+              printf 'REDIS_CONN_STRING=redis://:%s@redis:6379\n' $REDIS_PASS >> .env
+              printf 'SESSION_SECRET=%s\n' $SESSION_SEC >> .env
+              printf 'TZ=Asia/Shanghai\n' >> .env
+              echo ">>> .env generated"
             else
               echo ">>> .env already has all required variables"
             end
@@ -96,4 +88,4 @@ jobs:
             echo ">>> Pruning old images..."
             docker image prune -f
 
-            echo ">>> Deployment complete"
+            echo ">>> DEPLOY SUCCESS"
